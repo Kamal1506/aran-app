@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe Route Planner - அரண்</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Maps API -->
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geometry"></script>
+    <style>
+       :root {
+    /* Your red palette */
+    --red-1: #FDECEC;   /* lightest */
+    --red-2: #E57D8B;   /* soft pink */
+    --red-3: #EE1C2B;   /* bright red */
+    --red-4: #B60717;   /* deep red */
+    --red-5: #7A0204;   /* darkest */
+
+    --primary-gradient: linear-gradient(135deg, var(--red-3) 0%, var(--red-5) 100%);
+    --primary-color: var(--red-3);
+    --secondary-color: var(--red-4);
+    --danger-color: #ffffff;
+    --success-color: var(--red-2);
+    --warning-color: #ffc107;
+}
+
+    body {
+        background: var(--primary-gradient);
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .navbar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .brand-title {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: 1.8rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-decoration: none;
+    }
+
+    .route-card {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 25px;
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 1.5rem;
+    }
+
+    .card-header-custom h4 {
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+    }
+
+    #map {
+        height: 400px;
+        border-radius: 15px;
+        margin-bottom: 1rem;
+    }
+
+    .safety-score {
+        font-size: 2rem;
+        font-weight: bold;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .score-excellent {
+        color: #28a745;
+    }
+
+    .score-good {
+        color: #ffc107;
+    }
+
+    .score-poor {
+        color: var(--danger-color);
+    }
+
+    .route-option {
+        border: 2px solid #f1c9c9;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #FFE6E6;
+    }
+
+    .route-option:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+
+    .route-option.selected {
+        border-color: var(--primary-color);
+        background: #ffecec;
+    }
+
+    .safe-place {
+        background: #fff3f3;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--success-color);
+    }
+
+    .nav-link-custom {
+        color: #6B0004;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .nav-link-custom:hover {
+        color: var(--primary-color);
+    }
+
+    .dropdown-menu {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .step-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f1c9c9;
+    }
+
+    .step-item:last-child {
+        border-bottom: none;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-title" href="{{ url_for('home') }}">
+                <i class="fas fa-shield-alt"></i> ARAN
+            </a>
+
+            <div class="navbar-nav ms-auto align-items-center">
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('home') }}">
+                    <i class="fas fa-home me-1"></i> Dashboard
+                </a>
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user-circle me-1"></i> My Profile
+                </a>
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('whatsapp_setup') }}">
+                    <i class="fab fa-whatsapp me-1"></i> WhatsApp Setup
+                </a>
+
+                <!-- Settings Dropdown -->
+                <div class="dropdown">
+                    <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fas fa-cog me-1"></i> Settings
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('settings') }}">
+                                <i class="fas fa-info-circle me-2"></i> About App
+                            </a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                            </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Route Planner Content -->
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <!-- Header -->
+                <div class="route-card">
+                    <div class="card-header-custom">
+                        <h4><i class="fas fa-route me-2"></i> Safe Route Planner</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted mb-4">
+                            Find the safest route to any destination using real Google Maps navigation.
+                        </p>
+
+                        <!-- Route Input Form -->
+                        <div class="row mb-4">
+                            <div class="col-md-5">
+                                <div class="mb-3">
+                                    <label for="origin" class="form-label">
+                                        <i class="fas fa-location-arrow me-2 text-primary"></i>Start Location
+                                    </label>
+                                    <input type="text" class="form-control" id="origin"
+                                        placeholder="Your current location (auto-detected)" readonly>
+                                    <small class="text-muted" id="originCoords">Detecting location...</small>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="mb-3">
+                                    <label for="destination" class="form-label">
+                                        <i class="fas fa-map-marker-alt me-2 text-danger"></i>Destination
+                                    </label>
+                                    <input type="text" class="form-control" id="destination"
+                                        placeholder="Enter destination address or location">
+                                    <small class="text-muted" id="destCoords"></small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary w-100" onclick="findSafeRoute()" id="findRouteBtn">
+                                    <i class="fas fa-search me-2"></i>Find Route
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Map and Route Details -->
+            <div class="col-lg-8">
+                <!-- Map Container -->
+                <div class="route-card">
+                    <div class="card-header-custom">
+                        <h4><i class="fas fa-map me-2"></i> Route Map</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="map"></div>
+                        <div id="routeDetails" style="display: none;">
+                            <h5>Route Instructions</h5>
+                            <div id="routeSteps" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Options and Safety Info -->
+            <div class="col-lg-4">
+                <!-- Safety Score -->
+                <div class="route-card">
+                    <div class="card-header-custom">
+                        <h4><i class="fas fa-shield-alt me-2"></i> Safety Rating</h4>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <div id="safetyScore" class="safety-score score-good">-</div>
+                        <p class="text-muted mb-3">Route Safety Score</p>
+                        <div id="safetyTips"></div>
+                    </div>
+                </div>
+
+                <!-- Route Options -->
+                <div class="route-card">
+                    <div class="card-header-custom">
+                        <h4><i class="fas fa-route me-2"></i> Route Options</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="routeOptions">
+                            <p class="text-center text-muted">Select a destination to see route options</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nearby Safe Places -->
+                <div class="route-card">
+                    <div class="card-header-custom">
+                        <h4><i class="fas fa-star me-2"></i> Nearby Safe Places</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="safePlaces"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let directionsService;
+        let directionsRenderer;
+        let currentLocation = { lat: 11.1271, lng: 78.6569 }; // Default center
+        let currentRoutes = [];
+        let currentMarkers = [];
+
+        // Initialize Map with Directions Service
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: currentLocation,
+                zoom: 10,
+                styles: [
+                    {
+                        "featureType": "all",
+                        "elementType": "geometry.fill",
+                        "stylers": [{ "weight": "2.00" }]
+                    },
+                    {
+                        "featureType": "all",
+                        "elementType": "geometry.stroke",
+                        "stylers": [{ "color": "#9c9c9c" }]
+                    },
+                    {
+                        "featureType": "all",
+                        "elementType": "labels.text",
+                        "stylers": [{ "visibility": "on" }]
+                    },
+                    {
+                        "featureType": "road",
+                        "elementType": "all",
+                        "stylers": [{ "visibility": "on" }]
+                    },
+                    {
+                        "featureType": "transit",
+                        "elementType": "all",
+                        "stylers": [{ "visibility": "off" }]
+                    }
+                ]
+            });
+
+            // Initialize Directions Service
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                suppressMarkers: false,
+                polylineOptions: {
+                    strokeColor: '#667eea',
+                    strokeWeight: 6,
+                    strokeOpacity: 0.8
+                },
+                markerOptions: {
+                    visible: true
+                }
+            });
+
+            // Get user's current location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        currentLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+
+                        // Update the origin display with coordinates
+                        document.getElementById('origin').value = `Current Location`;
+                        document.getElementById('originCoords').textContent = `📍 ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`;
+
+                        map.setCenter(currentLocation);
+                        map.setZoom(13);
+
+                        // Add current location marker
+                        new google.maps.Marker({
+                            position: currentLocation,
+                            map: map,
+                            title: "Your Location",
+                            icon: {
+                                url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNy41ODYgMiA0IDUuNTg2IDQgMTBDNCAxNC40MTQgNy41ODYgMTggMTIgMThDMTYuNDE0IDE4IDIwIDE0LjQxNCAyMCAxMEMyMCA1LjU4NiAxNi40MTQgMiAxMiAyWk0xMiAxNkM4LjY4NiAxNiA2IDEzLjMxNCA2IDEwQzYgNi42ODYgOC42ODYgNCAxMiA0QzE1LjMxNCA0IDE4IDYuNjg2IDE4IDEwQzE4IDEzLjMxNCAxNS4zMTQgMTYgMTIgMTZaIiBmaWxsPSIjNjY3RUVBIi8+CjxjaXJjbGUgY3g9IjEyIiBjeT0iMTAiIHI9IjMiIGZpbGw9IiM2NjdFRUEiLz4KPC9zdmc+',
+                                scaledSize: new google.maps.Size(30, 30)
+                            }
+                        });
+                    },
+                    function (error) {
+                        console.log('Error getting location:', error);
+                        document.getElementById('originCoords').textContent = '❌ Unable to detect location';
+                        map.setCenter(currentLocation);
+                        map.setZoom(10);
+                    }
+                );
+            }
+
+            loadSafePlaces();
+        }
+
+        // Clear all markers from map
+        function clearMarkers() {
+            currentMarkers.forEach(marker => marker.setMap(null));
+            currentMarkers = [];
+        }
+
+        // Find safe route using REAL Google Maps API
+        function findSafeRoute() {
+            const destination = document.getElementById('destination').value;
+            const findRouteBtn = document.getElementById('findRouteBtn');
+
+            if (!destination) {
+                alert('Please enter a destination');
+                return;
+            }
+
+            if (!currentLocation || !currentLocation.lat) {
+                alert('⚠️ Could not detect your current location. Please ensure location permission is granted and refresh the page.');
+                return;
+            }
+
+            // Show loading state
+            findRouteBtn.innerHTML = '<div class="loading-spinner me-2"></div> Finding Route...';
+            findRouteBtn.disabled = true;
+
+            document.getElementById('routeOptions').innerHTML = '<p class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Finding safest route...</p>';
+            document.getElementById('safetyScore').textContent = '-';
+            document.getElementById('safetyTips').innerHTML = '';
+            document.getElementById('routeDetails').style.display = 'none';
+
+            // Clear previous route and markers
+            directionsRenderer.setDirections({ routes: [] });
+            clearMarkers();
+
+            // Get user's current location first
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        const userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+
+                        // Call REAL Google Maps API
+                        fetch('/api/get_real_directions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                origin: 'Current Location',
+                                destination: destination,
+                                userLocation: userLocation,
+                                travel_mode: 'driving'
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    currentRoutes = data.routes;
+                                    displayRealRouteInfo(data.routes[0]);
+                                    displayRealRouteOptions(data.routes);
+                                    drawRealRouteOnMap(data.routes[0]);
+                                } else {
+                                    // Fallback to mock data
+                                    fallbackToMockRoute(userLocation, destination);
+                                }
+
+                                // Reset button
+                                findRouteBtn.innerHTML = '<i class="fas fa-search me-2"></i>Find Route';
+                                findRouteBtn.disabled = false;
+                            })
+                            .catch(error => {
+                                console.error('API Error:', error);
+                                alert(`❌ Error finding route: ${error.message || 'Unknown error'}`);
+                                document.getElementById('routeOptions').innerHTML = '<p class="text-center text-danger"><i class="fas fa-exclamation-circle me-2"></i>Failed to find route. Please check your destination and try again.</p>';
+                                
+                                // Reset button
+                                findRouteBtn.innerHTML = '<i class="fas fa-search me-2"></i>Find Route';
+                                findRouteBtn.disabled = false;
+                            });
+                    },
+                    function (error) {
+                        alert('Error getting your location. Please enable location services.');
+                        findRouteBtn.innerHTML = '<i class="fas fa-search me-2"></i>Find Route';
+                        findRouteBtn.disabled = false;
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+                findRouteBtn.innerHTML = '<i class="fas fa-search me-2"></i>Find Route';
+                findRouteBtn.disabled = false;
+            }
+        }
+
+        // Draw REAL route on map using Google Directions
+        function drawRealRouteOnMap(route) {
+            console.log('Drawing route on map:', route);
+
+            // Create a DirectionsRequest for the selected route
+            const request = {
+                origin: route.start_address,
+                destination: route.end_address,
+                travelMode: 'DRIVING',
+                provideRouteAlternatives: false
+            };
+
+            // Use Google Directions Service to draw the route
+            directionsService.route(request, function (result, status) {
+                if (status === 'OK') {
+                    console.log('Route drawn successfully:', result);
+                    directionsRenderer.setDirections(result);
+
+                    // Fit map to show entire route with padding
+                    const bounds = new google.maps.LatLngBounds();
+                    result.routes[0].legs[0].steps.forEach(step => {
+                        bounds.extend(step.start_location);
+                        bounds.extend(step.end_location);
+                    });
+                    map.fitBounds(bounds);
+
+                    // Add padding to the bounds
+                    map.panToBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+
+                } else {
+                    console.error('Error drawing route:', status);
+                    // Fallback: Draw a simple polyline using overview_polyline
+                    drawFallbackRoute(route);
+                }
+            });
+        }
+
+        // Fallback route drawing using polyline
+        function drawFallbackRoute(route) {
+            console.log('Using fallback route drawing');
+
+            if (route.overview_polyline) {
+                try {
+                    const path = google.maps.geometry.encoding.decodePath(route.overview_polyline.points);
+
+                    // Clear previous polylines
+                    if (window.routePolyline) {
+                        window.routePolyline.setMap(null);
+                    }
+
+                    // Draw the route line
+                    window.routePolyline = new google.maps.Polyline({
+                        path: path,
+                        geodesic: true,
+                        strokeColor: '#667eea',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 6,
+                        map: map
+                    });
+
+                    // Fit map to show the route
+                    const bounds = new google.maps.LatLngBounds();
+                    path.forEach(point => bounds.extend(point));
+                    map.fitBounds(bounds);
+
+                } catch (error) {
+                    console.error('Error decoding polyline:', error);
+                    drawSimpleRoute(route);
+                }
+            } else {
+                drawSimpleRoute(route);
+            }
+        }
+        // Simple route drawing as last resort
+        function drawSimpleRoute(route) {
+            console.log('Drawing simple route');
+
+            // Clear previous markers
+            clearMarkers();
+
+            // Add start marker (current location)
+            const startMarker = new google.maps.Marker({
+                position: currentLocation,
+                map: map,
+                title: "Start: " + route.start_address,
+                icon: {
+                    url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNy41ODYgMiA0IDUuNTg2IDQgMTBDNCAxNC40MTQgNy41ODYgMTggMTIgMThDMTYuNDE0IDE4IDIwIDE0LjQxNCAyMCAxMEMyMCA1LjU4NiAxNi40MTQgMiAxMiAyWk0xMiAxNkM4LjY4NiAxNiA2IDEzLjMxNCA2IDEwQzYgNi42ODYgOC42ODYgNCAxMiA0QzE1LjMxNCA0IDE4IDYuNjg2IDE4IDEwQzE4IDEzLjMxNCAxNS4zMTQgMTYgMTIgMTZaIiBmaWxsPSIjNjY3RUVBIi8+CjxjaXJjbGUgY3g9IjEyIiBjeT0iMTAiIHI9IjMiIGZpbGw9IiM2NjdFRUEiLz4KPC9zdmc+',
+                    scaledSize: new google.maps.Size(30, 30)
+                }
+            });
+            currentMarkers.push(startMarker);
+
+            // Estimate destination coordinates (this is a fallback - in real app you'd geocode the address)
+            const destLat = currentLocation.lat + 0.01;
+            const destLng = currentLocation.lng + 0.01;
+            const destLocation = { lat: destLat, lng: destLng };
+
+            // Add destination marker
+            const destMarker = new google.maps.Marker({
+                position: destLocation,
+                map: map,
+                title: "Destination: " + route.end_address,
+                icon: {
+                    url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNy41ODYgMiA0IDUuNTg2IDQgMTBDNCAxNC40MTQgNy41ODYgMTggMTIgMThDMTYuNDE0IDE4IDIwIDE0LjQxNCAyMCAxMEMyMCA1LjU4NiAxNi40MTQgMiAxMiAyWk0xMiAxNkM4LjY4NiAxNiA2IDEzLjMxNCA2IDEwQzYgNi42ODYgOC42ODYgNCAxMiA0QzE1LjMxNCA0IDE4IDYuNjg2IDE4IDEwQzE4IDEzLjMxNCAxNS4zMTQgMTYgMTIgMTZaIiBmaWxsPSIjREMzNTQ1Ii8+CjxjaXJjbGUgY3g9IjEyIiBjeT0iMTAiIHI9IjMiIGZpbGw9IiNEQzM1NDUiLz4KPC9zdmc+',
+                    scaledSize: new google.maps.Size(30, 30)
+                }
+            });
+            currentMarkers.push(destMarker);
+
+            // Draw a simple straight line (fallback)
+            if (window.routePolyline) {
+                window.routePolyline.setMap(null);
+            }
+
+            window.routePolyline = new google.maps.Polyline({
+                path: [currentLocation, destLocation],
+                geodesic: true,
+                strokeColor: '#667eea',
+                strokeOpacity: 1.0,
+                strokeWeight: 6,
+                map: map
+            });
+
+            // Fit map to show both markers
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(currentLocation);
+            bounds.extend(destLocation);
+            map.fitBounds(bounds);
+        }
+
+        // Display REAL route information
+        function displayRealRouteInfo(route) {
+            // Update destination display with address
+            document.getElementById('destination').value = route.end_address;
+            
+            // Update destination coordinates
+            if (route.bounds) {
+                const destLat = route.bounds.northeast.lat;
+                const destLng = route.bounds.northeast.lng;
+                document.getElementById('destCoords').textContent = `📍 ${destLat.toFixed(4)}, ${destLng.toFixed(4)}`;
+            }
+            
+            // Update safety score
+            const scoreElement = document.getElementById('safetyScore');
+            scoreElement.textContent = route.safety_score + '/100';
+
+            if (route.safety_score >= 80) {
+                scoreElement.className = 'safety-score score-excellent';
+            } else if (route.safety_score >= 60) {
+                scoreElement.className = 'safety-score score-good';
+            } else {
+                scoreElement.className = 'safety-score score-poor';
+            }
+
+            // Generate safety tips
+            const safetyTips = generateSafetyTips(route);
+            const tipsHtml = safetyTips.map(tip =>
+                `<div class="alert alert-info alert-sm mb-2">
+            <i class="fas fa-info-circle me-2"></i>${tip}
+        </div>`
+            ).join('');
+            document.getElementById('safetyTips').innerHTML = tipsHtml;
+
+            // Display route steps
+            const stepsHtml = route.steps.map((step, index) =>
+                `<div class="step-item">
+            <div class="d-flex">
+                <span class="badge bg-primary me-3">${index + 1}</span>
+                <div>
+                    <strong>${step.instruction}</strong>
+                    <div class="text-muted small">
+                        <i class="fas fa-road me-1"></i> ${step.distance} • 
+                        <i class="fas fa-clock me-1"></i> ${step.duration}
+                    </div>
+                </div>
+            </div>
+        </div>`
+            ).join('');
+            document.getElementById('routeSteps').innerHTML = stepsHtml;
+            document.getElementById('routeDetails').style.display = 'block';
+        }
+
+        // Display REAL route options
+        function displayRealRouteOptions(routes) {
+            let optionsHtml = '';
+
+            routes.forEach((route, index) => {
+                let scoreClass = 'score-good';
+                if (route.safety_score >= 80) scoreClass = 'score-excellent';
+                if (route.safety_score < 60) scoreClass = 'score-poor';
+
+                const routeName = route.summary || `Route ${index + 1}`;
+
+                optionsHtml += `
+            <div class="route-option" onclick="selectRealRoute(${index})">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">${routeName}</h6>
+                    <span class="${scoreClass}">${route.safety_score}/100</span>
+                </div>
+                <div class="text-muted small">
+                    <i class="fas fa-road me-1"></i> ${route.distance.text} • 
+                    <i class="fas fa-clock me-1"></i> ${route.duration.text}
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">${route.start_address.split(',')[0]} to ${route.end_address.split(',')[0]}</small>
+                </div>
+            </div>
+        `;
+            });
+
+            document.getElementById('routeOptions').innerHTML = optionsHtml;
+
+            // Auto-select the first route
+            if (routes.length > 0) {
+                setTimeout(() => {
+                    const firstOption = document.querySelector('.route-option');
+                    if (firstOption) {
+                        firstOption.classList.add('selected');
+                    }
+                }, 100);
+            }
+        }
+
+        // Select REAL route option
+        function selectRealRoute(routeIndex) {
+            console.log('Selecting route:', routeIndex);
+            console.log('Available routes:', currentRoutes.length);
+
+            // Remove selected class from all options
+            document.querySelectorAll('.route-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+
+            // Add selected class to clicked option
+            const clickedElement = event.currentTarget;
+            clickedElement.classList.add('selected');
+
+            if (currentRoutes[routeIndex]) {
+                const selectedRoute = currentRoutes[routeIndex];
+                console.log('Selected route:', selectedRoute);
+
+                // Update route info display
+                displayRealRouteInfo(selectedRoute);
+
+                // Draw the selected route on map
+                drawRealRouteOnMap(selectedRoute);
+
+                // Show success message
+                showToast(`Switched to ${selectedRoute.summary || 'selected route'}`);
+            } else {
+                console.error('Route not found at index:', routeIndex);
+                showToast('Error: Route not found', 'error');
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            // Remove existing toasts
+            const existingToasts = document.querySelectorAll('.custom-toast');
+            existingToasts.forEach(toast => toast.remove());
+
+            const toast = document.createElement('div');
+            toast.className = `custom-toast alert alert-${type === 'error' ? 'danger' : 'success'} position-fixed`;
+            toast.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        min-width: 250px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+            toast.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <span>${message}</span>
+            <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+
+            document.body.appendChild(toast);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 3000);
+        }
+
+        // Generate safety tips based on route characteristics
+        function generateSafetyTips(route) {
+            const tips = [];
+
+            if (route.safety_score >= 80) {
+                tips.push("This route has excellent safety ratings with well-lit main roads");
+            } else if (route.safety_score >= 60) {
+                tips.push("This route has good safety features - stay in populated areas");
+            } else {
+                tips.push("Consider traveling with someone on this route");
+            }
+
+            if (route.duration.value > 7200) { // More than 2 hours
+                tips.push("Long journey - plan for breaks every 2 hours");
+                tips.push("Carry water and emergency supplies");
+            } else if (route.duration.value > 3600) { // More than 1 hour
+                tips.push("Medium journey - stay alert and take breaks if needed");
+            }
+
+            if (route.distance.value > 100000) { // More than 100km
+                tips.push("Long distance travel - ensure vehicle is in good condition");
+            }
+
+            tips.push("Stay aware of your surroundings at all times");
+            tips.push("Keep your phone charged and accessible");
+            tips.push("Share your live location with trusted contacts");
+
+            return tips;
+        }
+
+        // Fallback to mock data if real API fails
+        function fallbackToMockRoute(userLocation, destination) {
+            console.log('Using mock route data as fallback');
+
+            fetch('/api/get_route', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    origin: 'Current Location',
+                    destination: destination,
+                    userLocation: userLocation
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Convert mock data to match real API format
+                        const mockRoutes = data.routes.map(route => ({
+                            ...route,
+                            start_address: "Current Location",
+                            end_address: destination,
+                            distance: typeof route.distance === 'string' ? { text: route.distance, value: 5200 } : route.distance,
+                            duration: typeof route.duration === 'string' ? { text: route.duration, value: 900 } : route.duration,
+                            steps: Array.isArray(route.steps) ? route.steps.map(step =>
+                                typeof step === 'string' ? {
+                                    instruction: step,
+                                    distance: { text: step.match(/\(([^)]+)\)/)?.[1] || '0 m' },
+                                    duration: { text: '' }
+                                } : step
+                            ) : []
+                        }));
+
+                        currentRoutes = mockRoutes;
+                        displayRealRouteInfo(mockRoutes[0]);
+                        displayRealRouteOptions(mockRoutes);
+
+                        // Draw mock route
+                        drawSimpleRoute(mockRoutes[0]);
+                    }
+                });
+        }
+
+        // Load nearby safe places
+        function loadSafePlaces() {
+            fetch('/api/get_nearby_safe_places')
+                .then(response => response.json())
+                .then(places => {
+                    const placesHtml = places.map(place => `
+                <div class="safe-place">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="fas fa-${getPlaceIcon(place.type)} me-2 text-${getPlaceColor(place.type)}"></i>
+                                ${place.name}
+                            </h6>
+                            <p class="text-muted small mb-1">${place.address}</p>
+                            <p class="text-muted small mb-0">
+                                <i class="fas fa-walking me-1"></i> ${place.distance} away
+                            </p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="callPlace('${place.phone}')">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+                    document.getElementById('safePlaces').innerHTML = placesHtml;
+                })
+                .catch(error => {
+                    console.error('Error loading safe places:', error);
+                });
+        }
+
+        function getPlaceIcon(type) {
+            const icons = {
+                'police': 'shield-alt',
+                'pharmacy': 'pills',
+                'cafe': 'coffee',
+                'mall': 'shopping-cart',
+                'hospital': 'hospital'
+            };
+            return icons[type] || 'map-marker-alt';
+        }
+
+        function getPlaceColor(type) {
+            const colors = {
+                'police': 'primary',
+                'pharmacy': 'success',
+                'cafe': 'warning',
+                'mall': 'info',
+                'hospital': 'danger'
+            };
+            return colors[type] || 'secondary';
+        }
+
+        function callPlace(phone) {
+            alert(`Calling ${phone}...\n\nIn a real app, this would dial the number.`);
+        }
+
+        // Initialize map when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            initMap();
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

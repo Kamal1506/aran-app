@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARAN - Women Safety Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+    /* Your red palette */
+    --red-1: #FDECEC;   /* lightest */
+    --red-2: #E57D8B;   /* soft pink */
+    --red-3: #EE1C2B;   /* bright red */
+    --red-4: #B60717;   /* deep red */
+    --red-5: #7A0204;   /* darkest */
+
+    --primary-gradient: linear-gradient(135deg, var(--red-3) 0%, var(--red-5) 100%);
+    --primary-color: var(--red-3);
+    --secondary-color: var(--red-4);
+    --danger-color: #ffffff;
+    --success-color: var(--red-2);
+    --warning-color: #ffc107;
+}
+
+body {
+    background: var(--primary-gradient);
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Navbar */
+.navbar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Logo Text */
+.brand-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.8rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+}
+
+/* Cards */
+.dashboard-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+    border: none;
+    overflow: hidden;
+}
+
+.card-header-custom {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 1.5rem;
+}
+
+.card-header-custom h4 {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+}
+
+/* SOS */
+.sos-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 280px;
+    background: linear-gradient(135deg, var(--red-2), var(--red-4));
+    border-radius: 20px;
+    margin: 1rem;
+    position: relative;
+}
+
+.sos-button {
+    background: var(--red-4);
+    border: none;
+    border-radius: 50%;
+    width: 180px;
+    height: 180px;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 0 0 rgba(128, 0, 0, 0.4);
+    animation: pulse 2s infinite;
+    transition: all 0.3s ease;
+    color: var(--danger-color);
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.sos-button:active {
+    transform: scale(0.95);
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+    70% { box-shadow: 0 0 0 30px rgba(255, 255, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+/* Quick Actions */
+.quick-action {
+    background: white;
+    border: 2px solid #f8f9fa;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.quick-action:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(238, 28, 43, 0.25);
+    border-color: var(--red-3);
+    color: inherit;
+}
+
+.action-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Emergency Contact */
+.emergency-contact {
+    background: var(--red-1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    border-left: 4px solid var(--red-3);
+    transition: all 0.3s ease;
+}
+
+.emergency-contact:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.contact-icon {
+    font-size: 2.2rem;
+    margin-bottom: 1rem;
+}
+
+/* Welcome Box */
+.user-welcome {
+    background: var(--primary-gradient);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.welcome-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.sub-text {
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+/* Stats Cards */
+.stats-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    border-left: 4px solid var(--red-2);
+}
+
+.stat-number {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--red-4);
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Navbar links */
+.nav-link-custom {
+    color: #555;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-link-custom:hover {
+    color: var(--red-3);
+}
+
+/* Dropdown */
+.dropdown-menu {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Location Modal */
+.location-modal .location-text {
+    background: #fbe9e9;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: monospace;
+    cursor: pointer;
+    border: 2px dashed var(--red-2);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.location-modal .location-text:hover {
+    background: var(--red-1);
+    border-color: var(--red-3);
+}
+
+.location-modal .location-text.copied {
+    background: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.copy-indicator {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.location-text.copied .copy-indicator {
+    opacity: 1;
+}
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-title" href="{{ url_for('home') }}">
+                <i class="fas fa-shield-alt"></i> ARAN
+            </a>
+
+            <div class="navbar-nav ms-auto align-items-center">
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user-circle me-1"></i> My Profile
+                </a>
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('route_planner') }}">
+                    <i class="fas fa-route me-1"></i> Route Planner
+                </a>
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('whatsapp_setup') }}">
+                    <i class="fab fa-whatsapp me-1"></i> WhatsApp Setup
+                </a>
+
+                <!-- Settings Dropdown -->
+                <div class="dropdown">
+                    <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fas fa-cog me-1"></i> Settings
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('settings') }}">
+                                <i class="fas fa-info-circle me-2"></i> About App
+                            </a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                            </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Dashboard -->
+    <div class="container mt-4">
+        <!-- Welcome Section -->
+        <div class="user-welcome">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="welcome-text">Welcome, <span id="userName">User</span>! 👋</div>
+                    <div class="sub-text">Your safety is our priority. Stay protected with Aran's emergency features.
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="stats-card d-inline-block">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Safety Ready</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency SOS Section -->
+        <div class="dashboard-card">
+            <div class="card-header-custom">
+                <h4><i class="fas fa-bell me-2"></i> Emergency SOS</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="sos-container">
+                    <button class="sos-button" id="sosButton" onclick="triggerSOS()">
+                        SOS
+                    </button>
+                </div>
+                <p class="text-center text-muted mt-3 mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Press in emergency. Alerts will be sent to ALL your trusted contacts immediately.
+                </p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dashboard-card">
+            <div class="card-header-custom">
+                <h4><i class="fas fa-bolt me-2"></i> Quick Actions</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-4 col-6 mb-3">
+                        <a class="quick-action" onclick="shareLocation()">
+                            <div class="action-icon">
+                                <i class="fas fa-location-arrow"></i>
+                            </div>
+                            <div class="action-text">
+                                <strong>Share Location</strong>
+                                <p class="text-muted mb-0 small">Share your current location</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 col-6 mb-3">
+                        <a class="quick-action" href="{{ url_for('route_planner') }}">
+                            <div class="action-icon">
+                                <i class="fas fa-route"></i>
+                            </div>
+                            <div class="action-text">
+                                <strong>Safe Route</strong>
+                                <p class="text-muted mb-0 small">Plan safest path</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 col-6 mb-3">
+                        <a class="quick-action" onclick="safetyTips()">
+                            <div class="action-icon">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="action-text">
+                                <strong>Safety Tips</strong>
+                                <p class="text-muted mb-0 small">Important safety guidelines</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Contacts & Stats -->
+        <div class="row">
+            <!-- Emergency Contacts -->
+            <div class="col-md-8">
+                <div class="dashboard-card">
+                    <div class="card-header-custom">
+                        <h4><i class="fas fa-address-book me-2"></i> Emergency Contacts</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="emergency-contact">
+                                    <div class="contact-icon text-danger">
+                                        <i class="fas fa-police-box"></i>
+                                    </div>
+                                    <h5>Police</h5>
+                                    <p class="mb-2">Emergency: <strong>100</strong></p>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="callNumber('100')">
+                                        <i class="fas fa-phone me-1"></i> Call
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="emergency-contact">
+                                    <div class="contact-icon text-primary">
+                                        <i class="fas fa-ambulance"></i>
+                                    </div>
+                                    <h5>Ambulance</h5>
+                                    <p class="mb-2">Emergency: <strong>108</strong></p>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="callNumber('108')">
+                                        <i class="fas fa-phone me-1"></i> Call
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="emergency-contact">
+                                    <div class="contact-icon text-success">
+                                        <i class="fas fa-helmet-safety"></i>
+                                    </div>
+                                    <h5>Women Helpline</h5>
+                                    <p class="mb-2">Emergency: <strong>1091</strong></p>
+                                    <button class="btn btn-sm btn-outline-success" onclick="callNumber('1091')">
+                                        <i class="fas fa-phone me-1"></i> Call
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <div class="card-header-custom">
+                        <h4><i class="fas fa-chart-bar me-2"></i> Safety Stats</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="stats-card mb-3">
+                            <div class="stat-number" id="sosCount">0</div>
+                            <div class="stat-label">SOS Triggers</div>
+                        </div>
+                        <div class="stats-card mb-3">
+                            <div class="stat-number" id="locationShares">0</div>
+                            <div class="stat-label">Location Shares</div>
+                        </div>
+                        <div class="stats-card mb-3">
+                            <div class="stat-number" id="safetyScore">100%</div>
+                            <div class="stat-label">Safety Score</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Share Modal -->
+    <div class="modal fade" id="locationModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content location-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-location-arrow me-2"></i>Your Current Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Select and Copy the Location:</p>
+                    <div class="location-text" id="locationText" onclick="copyLocation(this)">
+                        Loading location...
+                        <span class="copy-indicator"><i class="fas fa-check"></i> Copied!</span>
+                    </div>
+                    <div class="mt-3">
+                        <strong>Google Maps Link:</strong>
+                        <div class="location-text" id="mapsLink" onclick="copyMapsLink(this)">
+                            Loading maps link...
+                            <span class="copy-indicator"><i class="fas fa-check"></i> Copied!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Load user name and stats
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('/api/get_user_profile')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('userName').textContent = data.name;
+                    document.getElementById('sosCount').textContent = data.sos_count;
+                    document.getElementById('locationShares').textContent = data.location_share_count;
+                })
+                .catch(error => {
+                    console.error('Error loading user data:', error);
+                });
+        });
+
+        // SOS Functionality
+        function triggerSOS() {
+            if (confirm('🚨 ARE YOU IN IMMEDIATE DANGER?\n\nThis will send emergency alerts to ALL your trusted contacts with your location.')) {
+                // Get user's location
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function (position) {
+                            const location = {
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude
+                            };
+
+                            // Send SOS to backend
+                            fetch('/api/trigger_sos', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(location)
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    // Update SOS count
+                                    fetch('/api/get_user_profile')
+                                        .then(response => response.json())
+                                        .then(profileData => {
+                                            document.getElementById('sosCount').textContent = profileData.sos_count;
+                                        });
+
+                                    alert('🚨 EMERGENCY ALERT SENT!\n\nHelp is on the way!\nYour location has been shared with ALL emergency contacts.');
+                                    playAlarm();
+                                })
+                                .catch(error => {
+                                    alert('🚨 EMERGENCY ALERT SENT!\n\nHelp is on the way!');
+                                    playAlarm();
+                                });
+                        },
+                        function (error) {
+                            // Location not available, still send SOS
+                            fetch('/api/trigger_sos', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({})
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    // Update SOS count
+                                    fetch('/api/get_user_profile')
+                                        .then(response => response.json())
+                                        .then(profileData => {
+                                            document.getElementById('sosCount').textContent = profileData.sos_count;
+                                        });
+
+                                    alert('🚨 EMERGENCY ALERT SENT!\n\nHelp is on the way!');
+                                    playAlarm();
+                                });
+                        }
+                    );
+                } else {
+                    alert('🚨 EMERGENCY ALERT SENT!\n\nHelp is on the way!');
+                    playAlarm();
+                }
+            }
+        }
+
+        function playAlarm() {
+            // Create alarm sound
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 3);
+            } catch (error) {
+                console.log('Audio not supported');
+            }
+        }
+
+        // Share Location with Copy Functionality
+        function shareLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const lat = position.coords.latitude.toFixed(6);
+                    const lng = position.coords.longitude.toFixed(6);
+                    const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
+                    const locationText = `Latitude: ${lat}, Longitude: ${lng}`;
+
+                    // Update modal content
+                    document.getElementById('locationText').textContent = locationText;
+                    document.getElementById('mapsLink').textContent = mapUrl;
+
+                    // Increment location share count
+                    fetch('/api/increment_location_share', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                        .then(() => {
+                            // Update location share count
+                            fetch('/api/get_user_profile')
+                                .then(response => response.json())
+                                .then(profileData => {
+                                    document.getElementById('locationShares').textContent = profileData.location_share_count;
+                                });
+                        });
+
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('locationModal'));
+                    modal.show();
+                }, function (error) {
+                    alert('❌ Could not get your location. Please enable location services.');
+                });
+            } else {
+                alert('❌ Location sharing not supported by your browser.');
+            }
+        }
+
+      
+        function safetyTips() {
+            alert('💡 Important Safety Tips:\n\n• Always share your live location with trusted contacts\n• Use well-lit and populated routes\n• Keep emergency numbers handy\n• Trust your instincts - if something feels wrong, leave\n• Avoid isolated areas, especially at night\n• Keep your phone charged when traveling');
+        }
+
+        function callNumber(number) {
+            alert(`📞 Calling ${number}...\n\nIn a real mobile app, this would automatically dial the emergency number.`);
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

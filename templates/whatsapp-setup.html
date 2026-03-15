@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Setup - அரண்</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --red-1: #FDECEC;   /* lightest */
+            --red-2: #E57D8B;   /* soft pink */
+            --red-3: #EE1C2B;   /* bright red */
+            --red-4: #B60717;   /* deep red */
+            --red-5: #7A0204;   /* darkest */
+
+            --primary-gradient: linear-gradient(135deg, var(--red-4) 0%, var(--red-5) 100%);
+            --primary-color: var(--red-3);
+            --secondary-color: var(--red-4);
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: #000; /* readable text */
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .brand-title {
+            font-weight: 700;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--red-3), var(--red-5));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-link-custom {
+            color: var(--red-5);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link-custom:hover {
+            color: var(--red-3);
+        }
+
+        /* CARD */
+        .setup-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+            margin: 2rem auto;
+            max-width: 600px;
+            border-left: 6px solid var(--red-4);
+            color: #000; /* ensures card content is readable */
+        }
+
+        .whatsapp-color {
+            color: var(--red-3);
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--red-4);
+            color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .alert h4, .alert p {
+            color: #000; /* text inside alerts visible */
+        }
+
+        .btn {
+            font-weight: 600;
+        }
+
+        /* WhatsApp header */
+        .whatsapp-header {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-title" href="{{ url_for('home') }}">
+                <i class="fas fa-shield-alt"></i> ARAN
+            </a>
+            <div class="navbar-nav ms-auto align-items-center">
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('home') }}">
+                    <i class="fas fa-home me-1"></i> Dashboard
+                </a>
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user-circle me-1"></i> My Profile
+                </a>
+                <a class="nav-link nav-link-custom me-3" href="{{ url_for('route_planner') }}">
+                    <i class="fas fa-route me-1"></i> Route Planner
+                </a>
+                <a class="btn btn-outline-danger btn-sm" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- WhatsApp Setup Content -->
+    <div class="container py-5">
+        <div class="setup-card">
+            <div class="card-header text-center py-4 whatsapp-header">
+                <h1><i class="fab fa-whatsapp me-2"></i>WhatsApp Alert Setup</h1>
+                <p class="mb-0">Follow these steps to enable emergency WhatsApp alerts</p>
+            </div>
+            <div class="card-body p-4">
+                <!-- Step 1 -->
+                <div class="d-flex align-items-center mb-4">
+                    <div class="step-number">1</div>
+                    <div>
+                        <h5 class="whatsapp-color">Save the Number</h5>
+                        <p class="mb-1">Save this number in your phone contacts:</p>
+                        <div class="alert alert-info">
+                            <h4 class="text-center mb-0">+1 (415) 523-8886</h4>
+                            <p class="text-center mb-0 small">Save as "Aran Safety Alerts"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="d-flex align-items-center mb-4">
+                    <div class="step-number">2</div>
+                    <div>
+                        <h5 class="whatsapp-color">Send Join Message</h5>
+                        <p class="mb-1">Open WhatsApp and send this exact message:</p>
+                        <div class="alert alert-warning">
+                            <h4 class="text-center mb-0"><code>join hundred-yesterday</code></h4>
+                        </div>
+                        <small class="text-muted">Case sensitive - type exactly as shown</small>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="d-flex align-items-center mb-4">
+                    <div class="step-number">3</div>
+                    <div>
+                        <h5 class="whatsapp-color">Wait for Confirmation</h5>
+                        <p>You'll receive a confirmation message from Twilio:</p>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            "You've joined the Twilio Sandbox for testing!"
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="d-flex align-items-center mb-4">
+                    <div class="step-number">4</div>
+                    <div>
+                        <h5 class="whatsapp-color">Test the Setup</h5>
+                        <p>Test if WhatsApp alerts are working:</p>
+                        <button class="btn btn-success w-100 mb-2" onclick="testWhatsApp()">
+                            <i class="fab fa-whatsapp me-2"></i>Send Test WhatsApp
+                        </button>
+                        <button class="btn btn-outline-info w-100" onclick="debugWhatsApp()">
+                            <i class="fas fa-bug me-2"></i>Debug Setup
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button class="btn btn-outline-warning btn-sm w-100" onclick="checkLastMessage()">
+                        <i class="fas fa-sync-alt me-2"></i>Check Last Message Status
+                    </button>
+                </div>
+
+                <!-- Important Notes -->
+                <div class="alert alert-info mt-4">
+                    <h6><i class="fas fa-info-circle me-2"></i>Important Notes:</h6>
+                    <ul class="mb-0">
+                        <li>All emergency contacts must complete this setup</li>
+                        <li>This uses Twilio's testing sandbox (free)</li>
+                        <li>For production use, we'll upgrade to WhatsApp Business API</li>
+                        <li>WhatsApp messages are more reliable than SMS in India</li>
+                    </ul>
+                </div>
+
+                <!-- Navigation -->
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('home') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-home me-1"></i>Back to Dashboard
+                    </a>
+                    <a href="{{ url_for('profile') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-users me-1"></i>Manage Contacts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testWhatsApp() {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div> Testing...';
+            button.disabled = true;
+
+            fetch('/api/test_whatsapp', { method: 'POST', headers: {'Content-Type': 'application/json'} })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('✅ WhatsApp test sent successfully!\n\nCheck your emergency contacts\' WhatsApp for the test message.');
+                } else {
+                    alert('❌ Failed to send test WhatsApp: ' + data.message);
+                }
+            })
+            .catch(error => { alert('Error testing WhatsApp: ' + error); })
+            .finally(() => {
+                button.innerHTML = '<i class="fab fa-whatsapp me-2"></i>Send Test WhatsApp';
+                button.disabled = false;
+            });
+        }
+
+        function debugWhatsApp() {
+            fetch('/api/debug_whatsapp_setup')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('✅ WhatsApp debug successful!\n\nTest message sent to: ' + data.contact_name);
+                } else {
+                    let errorMsg = '❌ ' + data.message;
+                    if (data.setup_instructions) {
+                        errorMsg += '\n\nSetup Instructions:\n';
+                        Object.values(data.setup_instructions).forEach(step => { errorMsg += '• ' + step + '\n'; });
+                    }
+                    alert(errorMsg);
+                }
+            })
+            .catch(error => { alert('Error debugging WhatsApp: ' + error); });
+        }
+
+        function checkLastMessage() {
+            alert('This feature will check the last WhatsApp message status (implement API)');
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
