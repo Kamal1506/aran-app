@@ -297,7 +297,7 @@ def create_app():
     @app.route('/whatsapp-setup')
     @login_required
     def whatsapp_setup():
-        return render_template('whatsapp-setup.html')
+        return render_template('whatsapp-setup.html', twilio_phone=os.getenv('TWILIO_PHONE_NUMBER'))
     
     # TEST LOCATION ACCURACY
     @app.route('/api/test_location')
@@ -773,24 +773,24 @@ Please click the link above and confirm it opens at Chennai coordinates."""
     
     return app
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = create_app()
-    
+
     with app.app_context():
         try:
             db.create_all()
             print("✅ Database initialized successfully")
         except Exception as e:
             print(f"❌ Database error: {e}")
-        
+
     print("🚀 Aran Women Safety App Started Successfully!")
     print("📧 Register: http://localhost:5000/register")
-    print("🔐 Login: http://localhost:5000/login") 
+    print("🔐 Login: http://localhost:5000/login")
     print("📱 WhatsApp Setup: http://localhost:5000/whatsapp-setup")
     print("📍 Location Test: http://localhost:5000/api/test_location")
     print("💬 Quick Test: http://localhost:5000/api/quick_test")
     print("✅ WhatsApp Integration: ACTIVE")
     print("✅ Google Maps Links: FIXED for accurate locations")
-    
+
     port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port)
