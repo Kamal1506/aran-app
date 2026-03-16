@@ -166,6 +166,8 @@ def create_app():
     # Get database URL from environment
     database_url = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///database.db')
 
+    print("DATABASE URL BEING USED:", database_url)
+
     # Fix Render PostgreSQL URL issue
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
