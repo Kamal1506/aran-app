@@ -10,7 +10,6 @@ import json
 from twilio.rest import Client
 from dotenv import load_dotenv
 import time
-import sqlite3
 
 # Load environment variables
 load_dotenv('twilio.env')
@@ -186,7 +185,6 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    return app
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
