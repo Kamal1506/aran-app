@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, app, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -163,11 +163,20 @@ def create_app():
     
     # Load configuration from environment
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change_this_in_production')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///database.db')
+
+# Get database URL from environment
+    database_url = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///database.db')
+
+# Fix Render PostgreSQL URL issue
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_recycle': 300,
-        'pool_pre_ping': True
+    'pool_recycle': 300,
+    'pool_pre_ping': True
     }
     
     db.init_app(app)
