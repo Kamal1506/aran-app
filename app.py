@@ -164,10 +164,10 @@ def create_app():
     # Load configuration from environment
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change_this_in_production')
 
-# Get database URL from environment
+    # Get database URL from environment
     database_url = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///database.db')
 
-# Fix Render PostgreSQL URL issue
+    # Fix Render PostgreSQL URL issue
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
 
@@ -175,10 +175,10 @@ def create_app():
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_recycle': 300,
-    'pool_pre_ping': True
+        'pool_recycle': 300,
+        'pool_pre_ping': True
     }
-    
+
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'login'
@@ -187,7 +187,7 @@ def create_app():
         db.create_all()
 
     return app
-    
+
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         db.session.remove()
