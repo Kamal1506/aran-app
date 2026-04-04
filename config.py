@@ -3,13 +3,26 @@ from dotenv import load_dotenv
 
 load_dotenv('twilio.env')
 
+
+def _get_database_url():
+    database_url = os.getenv('DATABASE_URL')
+
+    if not database_url:
+        raise ValueError("DATABASE_URL is not set")
+
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+    return database_url
+
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'fallback_secret_key_change_in_production')
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
-
-    if not SQLALCHEMY_DATABASE_URI:
-        raise ValueError("SQLALCHEMY_DATABASE_URI is not set")
+    SQLALCHEMY_DATABASE_URI = _get_database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_recycle': 300,
+        'pool_pre_ping': True
+    }
 
     # Twilio Configuration
     TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')

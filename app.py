@@ -10,6 +10,7 @@ import json
 from twilio.rest import Client
 from dotenv import load_dotenv
 import time
+from config import Config
 
 # Load environment variables
 load_dotenv('twilio.env')
@@ -159,33 +160,13 @@ Please check on them immediately and provide assistance!"""
 
 def create_app():
     app = Flask(__name__)
-    
-    # Load configuration from environment
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change_this_in_production')
+    app.config.from_object(Config)
 
-    # Get database URL from environment
-    database_url = os.getenv('SQLALCHEMY_DATABASE_URI')
-    
-    print("DATABASE URL BEING USED:", database_url)
-
-    # Fix Render PostgreSQL URL issue
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_recycle': 300,
-        'pool_pre_ping': True
-    }
+    print("DATABASE_URL =", os.getenv("DATABASE_URL"))
 
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'login'
-
-    with app.app_context():
-        db.create_all()
 
 
     @app.teardown_appcontext
@@ -318,7 +299,6 @@ def create_app():
     @login_required
     def test_location():
         """Test if location links work correctly"""
-        try:
             test_lat = 13.0827  # Chennai coordinates
             test_lng = 80.2707
             
@@ -340,14 +320,12 @@ def create_app():
             <hr>
             <p><strong>Instructions:</strong> Click each link and check if it opens at the correct Chennai location.</p>
             """
-        except Exception as e:
             return f"Error: {str(e)}"
     
     # QUICK TEST
     @app.route('/api/quick_test')
     @login_required
     def quick_test():
-        try:
             # Test with fixed Chennai coordinates
             test_lat = 13.0827
             test_lng = 80.2707
@@ -790,13 +768,6 @@ Please click the link above and confirm it opens at Chennai coordinates."""
 if __name__ == "__main__":
     app = create_app()
 
-    with app.app_context():
-        try:
-            db.create_all()
-            print("✅ Database initialized successfully")
-        except Exception as e:
-            print(f"❌ Database error: {e}")
-
     print("🚀 Aran Women Safety App Started Successfully!")
     print("📧 Register: http://localhost:5000/register")
     print("🔐 Login: http://localhost:5000/login")
@@ -808,3 +779,4 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
