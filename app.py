@@ -299,15 +299,15 @@ def create_app():
     @login_required
     def test_location():
         """Test if location links work correctly"""
-            test_lat = 13.0827  # Chennai coordinates
-            test_lng = 80.2707
+        test_lat = 13.0827  # Chennai coordinates
+        test_lng = 80.2707
             
-            # Test different Google Maps formats
-            maps_link1 = f"https://www.google.com/maps/search/?api=1&query={test_lat},{test_lng}"
-            maps_link2 = f"https://maps.google.com/?q={test_lat},{test_lng}&z=15"
-            maps_link3 = f"https://www.google.com/maps/@{test_lat},{test_lng},15z"
+        # Test different Google Maps formats
+        maps_link1 = f"https://www.google.com/maps/search/?api=1&query={test_lat},{test_lng}"
+        maps_link2 = f"https://maps.google.com/?q={test_lat},{test_lng}&z=15"
+        maps_link3 = f"https://www.google.com/maps/@{test_lat},{test_lng},15z"
             
-            return f"""
+        return f"""
             <h1>📍 Location Link Test</h1>
             <p><strong>Test Coordinates:</strong> {test_lat}, {test_lng} (Chennai)</p>
             <hr>
@@ -779,4 +779,3 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
