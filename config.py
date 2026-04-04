@@ -5,9 +5,12 @@ load_dotenv('twilio.env')
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'fallback_secret_key_change_in_production')
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///database.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
+
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("SQLALCHEMY_DATABASE_URI is not set")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
     # Twilio Configuration
     TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
     TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')

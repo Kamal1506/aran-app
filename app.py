@@ -164,8 +164,8 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change_this_in_production')
 
     # Get database URL from environment
-    database_url = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///database.db')
-
+    database_url = os.getenv('SQLALCHEMY_DATABASE_URI')
+    
     print("DATABASE URL BEING USED:", database_url)
 
     # Fix Render PostgreSQL URL issue
