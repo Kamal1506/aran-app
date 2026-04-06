@@ -320,12 +320,12 @@ def create_app():
             <hr>
             <p><strong>Instructions:</strong> Click each link and check if it opens at the correct Chennai location.</p>
             """
-            return f"Error: {str(e)}"
     
     # QUICK TEST
     @app.route('/api/quick_test')
     @login_required
     def quick_test():
+        try:
             # Test with fixed Chennai coordinates
             test_lat = 13.0827
             test_lng = 80.2707
