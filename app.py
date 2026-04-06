@@ -12,8 +12,8 @@ from dotenv import load_dotenv
 import time
 from config import Config
 
-# Load environment variables
-load_dotenv('twilio.env')
+# Load local environment variables without overriding real platform env vars.
+load_dotenv()
 
 # Initialize extensions
 db = SQLAlchemy()

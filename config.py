@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv('twilio.env')
+load_dotenv()
 
 
 def _get_database_url():
