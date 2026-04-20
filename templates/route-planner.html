@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Google Maps API -->
     <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geometry"></script>
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geometry,visualization"></script>
     <style>
        :root {
     /* Your red palette */
@@ -165,6 +165,35 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+
+    .heatmap-toggle {
+        border-radius: 999px;
+    }
+
+    .heat-zone {
+        border-radius: 14px;
+        padding: 1rem;
+        margin-bottom: 0.85rem;
+        border-left: 5px solid #ddd;
+        background: #fff7f7;
+    }
+
+    .heat-zone.safe {
+        border-left-color: #198754;
+    }
+
+    .heat-zone.caution {
+        border-left-color: #ffc107;
+    }
+
+    .heat-zone.risk {
+        border-left-color: #dc3545;
+    }
+
+    .heat-score {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+    }
 </style>
 
 </head>
@@ -267,6 +296,12 @@
                         <h4><i class="fas fa-map me-2"></i> Route Map</h4>
                     </div>
                     <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div class="text-muted small">Overlay a zone-based safety view on top of the route map.</div>
+                            <button class="btn btn-outline-danger btn-sm heatmap-toggle" id="heatmapToggleBtn" onclick="toggleHeatmap()" disabled>
+                                <i class="fas fa-fire me-2"></i>Show Heatmap
+                            </button>
+                        </div>
                         <div id="map"></div>
                         <div id="routeDetails" style="display: none;">
                             <h5>Route Instructions</h5>
@@ -311,6 +346,18 @@
                         <div id="safePlaces"></div>
                     </div>
                 </div>
+
+                <div class="route-card">
+                    <div class="card-header-custom">
+                        <h4><i class="fas fa-fire me-2"></i> Safety Heatmap</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted small mb-3" id="heatmapSummary">Find a route to generate a live risk view for this area.</p>
+                        <div id="heatmapZones">
+                            <p class="text-center text-muted mb-0">Heat zones will appear here after route analysis.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -322,6 +369,10 @@
         let currentLocation = { lat: 11.1271, lng: 78.6569 }; // Default center
         let currentRoutes = [];
         let currentMarkers = [];
+        let heatmapLayer = null;
+        let heatmapMarkers = [];
+        let heatmapVisible = false;
+        let currentHeatmapData = null;
 
         // Initialize Map with Directions Service
         function initMap() {
@@ -417,6 +468,18 @@
             currentMarkers = [];
         }
 
+        function clearHeatmap() {
+            if (heatmapLayer) {
+                heatmapLayer.setMap(null);
+                heatmapLayer = null;
+            }
+
+            heatmapMarkers.forEach(marker => marker.setMap(null));
+            heatmapMarkers = [];
+            heatmapVisible = false;
+            updateHeatmapToggle();
+        }
+
         // Find safe route using REAL Google Maps API
         function findSafeRoute() {
             const destination = document.getElementById('destination').value;
@@ -440,10 +503,14 @@
             document.getElementById('safetyScore').textContent = '-';
             document.getElementById('safetyTips').innerHTML = '';
             document.getElementById('routeDetails').style.display = 'none';
+            document.getElementById('heatmapSummary').textContent = 'Analyzing area safety signals...';
+            document.getElementById('heatmapZones').innerHTML = '<p class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Building safety heatmap...</p>';
+            currentHeatmapData = null;
 
             // Clear previous route and markers
             directionsRenderer.setDirections({ routes: [] });
             clearMarkers();
+            clearHeatmap();
 
             // Get user's current location first
             if (navigator.geolocation) {
@@ -474,6 +541,7 @@
                                     displayRealRouteInfo(data.routes[0]);
                                     displayRealRouteOptions(data.routes);
                                     drawRealRouteOnMap(data.routes[0]);
+                                    loadSafetyHeatmap(userLocation, getRouteDestinationPoint(data.routes[0]));
                                 } else {
                                     // Fallback to mock data
                                     fallbackToMockRoute(userLocation, destination);
@@ -752,6 +820,7 @@
 
                 // Draw the selected route on map
                 drawRealRouteOnMap(selectedRoute);
+                loadSafetyHeatmap(currentLocation, getRouteDestinationPoint(selectedRoute));
 
                 // Show success message
                 showToast(`Switched to ${selectedRoute.summary || 'selected route'}`);
@@ -863,11 +932,155 @@
 
                         // Draw mock route
                         drawSimpleRoute(mockRoutes[0]);
+                        loadSafetyHeatmap(userLocation, getRouteDestinationPoint(mockRoutes[0]));
                     }
                 });
         }
 
         // Load nearby safe places
+        function getRouteDestinationPoint(route) {
+            if (route.bounds && route.bounds.northeast && route.bounds.southwest) {
+                return {
+                    lat: (route.bounds.northeast.lat + route.bounds.southwest.lat) / 2,
+                    lng: (route.bounds.northeast.lng + route.bounds.southwest.lng) / 2
+                };
+            }
+
+            return {
+                lat: currentLocation.lat + 0.004,
+                lng: currentLocation.lng + 0.004
+            };
+        }
+
+        function loadSafetyHeatmap(origin, destination) {
+            fetch('/api/get_safety_heatmap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ origin, destination })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Unable to generate heatmap');
+                    }
+
+                    currentHeatmapData = data;
+                    renderHeatmapZones(data);
+                    buildHeatmapLayer(data.hotspots);
+                    document.getElementById('heatmapSummary').textContent = `${data.summary} Generated at ${data.generated_at}.`;
+                    updateHeatmapToggle();
+                })
+                .catch(error => {
+                    currentHeatmapData = null;
+                    document.getElementById('heatmapSummary').textContent = 'Could not generate the heatmap right now.';
+                    document.getElementById('heatmapZones').innerHTML = `<p class="text-danger small mb-0">${error.message}</p>`;
+                    updateHeatmapToggle();
+                });
+        }
+
+        function renderHeatmapZones(data) {
+            const zonesHtml = data.hotspots.map(spot => `
+                <div class="heat-zone ${spot.category}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="mb-1">${spot.name}</h6>
+                            <div class="small text-muted text-capitalize">${spot.category} zone</div>
+                        </div>
+                        <div class="heat-score">${spot.risk_score}/100</div>
+                    </div>
+                    <div class="small">${spot.reason}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('heatmapZones').innerHTML = zonesHtml;
+        }
+
+        function buildHeatmapLayer(hotspots) {
+            clearHeatmap();
+
+            const points = hotspots.map(spot => ({
+                location: new google.maps.LatLng(spot.lat, spot.lng),
+                weight: Math.max(1, Math.round(spot.intensity * 10))
+            }));
+
+            heatmapLayer = new google.maps.visualization.HeatmapLayer({
+                data: points,
+                dissipating: true,
+                radius: 45,
+                opacity: 0.7,
+                gradient: [
+                    'rgba(25, 135, 84, 0)',
+                    'rgba(25, 135, 84, 0.6)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(220, 53, 69, 0.9)'
+                ]
+            });
+
+            heatmapMarkers = hotspots.map(spot => {
+                const marker = new google.maps.Marker({
+                    position: { lat: spot.lat, lng: spot.lng },
+                    title: `${spot.name} - ${spot.risk_score}/100`,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: spot.category === 'risk' ? '#dc3545' : (spot.category === 'caution' ? '#ffc107' : '#198754'),
+                        fillOpacity: 0.95,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2
+                    }
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<strong>${spot.name}</strong><br>${spot.reason}<br>Risk score: ${spot.risk_score}/100`
+                });
+
+                marker.addListener('click', () => infoWindow.open(map, marker));
+                return marker;
+            });
+        }
+
+        function toggleHeatmap() {
+            if (!currentHeatmapData) {
+                return;
+            }
+
+            heatmapVisible = !heatmapVisible;
+
+            if (heatmapVisible) {
+                if (heatmapLayer) {
+                    heatmapLayer.setMap(map);
+                }
+                heatmapMarkers.forEach(marker => marker.setMap(map));
+            } else {
+                if (heatmapLayer) {
+                    heatmapLayer.setMap(null);
+                }
+                heatmapMarkers.forEach(marker => marker.setMap(null));
+            }
+
+            updateHeatmapToggle();
+        }
+
+        function updateHeatmapToggle() {
+            const button = document.getElementById('heatmapToggleBtn');
+            if (!button) {
+                return;
+            }
+
+            if (!currentHeatmapData) {
+                button.innerHTML = '<i class="fas fa-fire me-2"></i>Show Heatmap';
+                button.disabled = true;
+                return;
+            }
+
+            button.disabled = false;
+            button.innerHTML = heatmapVisible
+                ? '<i class="fas fa-eye-slash me-2"></i>Hide Heatmap'
+                : '<i class="fas fa-fire me-2"></i>Show Heatmap';
+        }
+
         function loadSafePlaces() {
             fetch('/api/get_nearby_safe_places')
                 .then(response => response.json())

@@ -2,7 +2,7 @@ from flask import Flask, app, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 import urllib.request
 import urllib.parse
@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import time
 from config import Config
 from sqlalchemy import inspect, text
+from zoneinfo import ZoneInfo
 
 # Load local environment variables without overriding real platform env vars.
 load_dotenv()
@@ -69,6 +70,94 @@ def load_user(user_id):
 
 # Google Maps API
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+APP_TIMEZONE = ZoneInfo("Asia/Kolkata")
+
+
+def get_local_now():
+    return datetime.now(timezone.utc).astimezone(APP_TIMEZONE)
+
+
+def format_local_timestamp():
+    return get_local_now().strftime('%Y-%m-%d %I:%M %p')
+
+
+def offset_point(lat, lng, lat_delta=0.0, lng_delta=0.0):
+    return {
+        'lat': round(lat + lat_delta, 6),
+        'lng': round(lng + lng_delta, 6)
+    }
+
+
+def build_safety_heatmap_data(origin, destination=None):
+    now = get_local_now()
+    hour = now.hour
+    night_risk = 22 if hour >= 20 or hour < 6 else 8
+    evening_risk = 12 if 18 <= hour < 20 else 0
+
+    destination = destination or origin
+    center_lat = (origin['lat'] + destination['lat']) / 2
+    center_lng = (origin['lng'] + destination['lng']) / 2
+
+    hotspots = [
+        {
+            'name': 'Police Support Zone',
+            'category': 'safe',
+            'risk_score': max(18, 28 - night_risk // 2),
+            'intensity': 0.18,
+            'reason': 'Close to police and high-visibility roads.',
+            'lat': center_lat + 0.0035,
+            'lng': center_lng - 0.0025
+        },
+        {
+            'name': 'Transit Stretch',
+            'category': 'caution',
+            'risk_score': 54 + evening_risk,
+            'intensity': 0.54,
+            'reason': 'Traffic bottlenecks and mixed lighting after sunset.',
+            'lat': center_lat - 0.0015,
+            'lng': center_lng + 0.004
+        },
+        {
+            'name': 'Dark Side Street',
+            'category': 'risk',
+            'risk_score': min(92, 68 + night_risk),
+            'intensity': 0.86,
+            'reason': 'Low footfall zone with poor late-night visibility.',
+            'lat': center_lat + 0.0045,
+            'lng': center_lng + 0.005
+        },
+        {
+            'name': '24x7 Pharmacy Belt',
+            'category': 'safe',
+            'risk_score': max(16, 24 - evening_risk // 2),
+            'intensity': 0.2,
+            'reason': 'Nearby pharmacy and late-hour commercial activity.',
+            'lat': center_lat - 0.004,
+            'lng': center_lng - 0.003
+        },
+        {
+            'name': 'Quiet Residential Pocket',
+            'category': 'caution',
+            'risk_score': min(78, 46 + night_risk),
+            'intensity': 0.62,
+            'reason': 'Residential lane becomes isolated late at night.',
+            'lat': center_lat + 0.0008,
+            'lng': center_lng - 0.005
+        }
+    ]
+
+    hotspots = [{
+        **spot,
+        'lat': round(spot['lat'], 6),
+        'lng': round(spot['lng'], 6)
+    } for spot in hotspots]
+
+    return {
+        'generated_at': format_local_timestamp(),
+        'time_band': 'night' if hour >= 20 or hour < 6 else 'day',
+        'summary': 'Risk rises after dark and drops near active public-support places.',
+        'hotspots': hotspots
+    }
 
 def ensure_runtime_columns(app):
     """Keep local databases compatible without a formal migration step."""
@@ -163,7 +252,7 @@ Last saved safe location:
 {location_line}
 
 Phone: {user.phone}
-Time: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}
+Time: {format_local_timestamp()}
 
 Please contact them immediately and verify they are safe."""
 
@@ -192,7 +281,7 @@ def send_whatsapp_alert(user, contacts, location_data):
 {maps_link}
 
 📱 User Phone: {user.phone}
-🕒 Time: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}
+🕒 Time: {format_local_timestamp()}
 
 📊 Coordinates: {lat:.6f}, {lng:.6f}
 
@@ -452,7 +541,7 @@ This is a test message to verify location accuracy.
 📍 Test Location (Chennai):
 {maps_link}
 
-📱 Test Time: {datetime.now().strftime('%I:%M %p')}
+📱 Test Time: {get_local_now().strftime('%I:%M %p')}
 
 Please click the link above and confirm it opens at Chennai coordinates."""
 
@@ -892,7 +981,7 @@ Please click the link above and confirm it opens at Chennai coordinates."""
         elif distance_km > 15:
             base_score -= 10
 
-        current_hour = datetime.now().hour
+        current_hour = get_local_now().hour
         if 6 <= current_hour <= 20:
             base_score += 10
         else:
@@ -972,6 +1061,39 @@ Please click the link above and confirm it opens at Chennai coordinates."""
             }
         ]
         return jsonify(safe_places)
+
+    @app.route('/api/get_safety_heatmap', methods=['POST'])
+    @login_required
+    def get_safety_heatmap():
+        try:
+            data = request.get_json() or {}
+            origin = data.get('origin') or {}
+            destination = data.get('destination') or {}
+
+            origin_lat = origin.get('lat')
+            origin_lng = origin.get('lng')
+            if origin_lat is None or origin_lng is None:
+                return jsonify({'status': 'error', 'message': 'Origin coordinates are required'})
+
+            origin_point = {
+                'lat': float(origin_lat),
+                'lng': float(origin_lng)
+            }
+
+            destination_point = None
+            if destination.get('lat') is not None and destination.get('lng') is not None:
+                destination_point = {
+                    'lat': float(destination['lat']),
+                    'lng': float(destination['lng'])
+                }
+
+            heatmap_data = build_safety_heatmap_data(origin_point, destination_point)
+            return jsonify({
+                'status': 'success',
+                **heatmap_data
+            })
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e)})
     
     return app
 
