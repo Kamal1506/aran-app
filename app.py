@@ -73,9 +73,9 @@ GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 def ensure_runtime_columns(app):
     """Keep local databases compatible without a formal migration step."""
     required_columns = {
-        'check_in_active': 'ALTER TABLE user ADD COLUMN check_in_active BOOLEAN DEFAULT 0',
-        'check_in_deadline': 'ALTER TABLE user ADD COLUMN check_in_deadline DATETIME',
-        'check_in_note': 'ALTER TABLE user ADD COLUMN check_in_note VARCHAR(200)'
+        'check_in_active': 'ALTER TABLE "user" ADD COLUMN check_in_active BOOLEAN DEFAULT FALSE',
+        'check_in_deadline': 'ALTER TABLE "user" ADD COLUMN check_in_deadline TIMESTAMP',
+        'check_in_note': 'ALTER TABLE "user" ADD COLUMN check_in_note VARCHAR(200)'
     }
 
     with app.app_context():
