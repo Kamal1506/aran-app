@@ -2,7 +2,7 @@ from flask import Flask, app, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import urllib.request
 import urllib.parse
@@ -11,6 +11,7 @@ from twilio.rest import Client
 from dotenv import load_dotenv
 import time
 from config import Config
+from sqlalchemy import inspect, text
 
 # Load local environment variables without overriding real platform env vars.
 load_dotenv()
@@ -41,6 +42,9 @@ class User(UserMixin, db.Model):
     home_address = db.Column(db.String(200))
     sos_count = db.Column(db.Integer, default=0)
     location_share_count = db.Column(db.Integer, default=0)
+    check_in_active = db.Column(db.Boolean, default=False)
+    check_in_deadline = db.Column(db.DateTime)
+    check_in_note = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def set_password(self, password):
@@ -65,6 +69,106 @@ def load_user(user_id):
 
 # Google Maps API
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+
+def ensure_runtime_columns(app):
+    """Keep local databases compatible without a formal migration step."""
+    required_columns = {
+        'check_in_active': 'ALTER TABLE user ADD COLUMN check_in_active BOOLEAN DEFAULT 0',
+        'check_in_deadline': 'ALTER TABLE user ADD COLUMN check_in_deadline DATETIME',
+        'check_in_note': 'ALTER TABLE user ADD COLUMN check_in_note VARCHAR(200)'
+    }
+
+    with app.app_context():
+        inspector = inspect(db.engine)
+        if 'user' not in inspector.get_table_names():
+            return
+
+        existing_columns = {column['name'] for column in inspector.get_columns('user')}
+        for column_name, statement in required_columns.items():
+            if column_name not in existing_columns:
+                db.session.execute(text(statement))
+        db.session.commit()
+
+
+def send_whatsapp_messages(contacts, message_body):
+    if not twilio_client:
+        return {'status': 'error', 'message': 'Twilio not configured'}
+
+    sent_messages = []
+    failed_messages = []
+
+    for contact in contacts:
+        try:
+            phone_clean = contact.phone.replace('+', '').replace(' ', '')
+            if len(phone_clean) == 10:
+                phone_clean = '91' + phone_clean
+
+            whatsapp_to = f"whatsapp:+{phone_clean}"
+            message = twilio_client.messages.create(
+                body=message_body,
+                from_=f'whatsapp:{os.getenv("TWILIO_PHONE_NUMBER")}',
+                to=whatsapp_to
+            )
+
+            sent_messages.append({
+                'name': contact.name,
+                'phone': contact.phone,
+                'message_id': message.sid
+            })
+            time.sleep(1)
+        except Exception as e:
+            failed_messages.append({
+                'name': contact.name,
+                'phone': contact.phone,
+                'error': str(e)
+            })
+
+    return {
+        'status': 'success' if sent_messages else 'error',
+        'sent_count': len(sent_messages),
+        'failed_count': len(failed_messages),
+        'sent_messages': sent_messages,
+        'failed_messages': failed_messages
+    }
+
+
+def build_location_link(location_data):
+    lat = location_data.get('lat')
+    lng = location_data.get('lng')
+    if lat is None or lng is None:
+        return None
+    return f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
+
+
+def send_check_in_missed_alert(user):
+    contacts = EmergencyContact.query.filter_by(user_id=user.id).all()
+    if not contacts:
+        return {'status': 'error', 'message': 'No emergency contacts configured'}
+
+    maps_link = build_location_link({
+        'lat': user.home_lat,
+        'lng': user.home_lng
+    })
+    location_line = maps_link or 'Home location not available in profile yet.'
+    note_line = user.check_in_note or 'No destination note shared.'
+
+    message_body = f"""Safety Check-In Alert - Aran App
+
+{user.name} missed their safety check-in.
+
+Destination / Note:
+{note_line}
+
+Last saved safe location:
+{location_line}
+
+Phone: {user.phone}
+Time: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}
+
+Please contact them immediately and verify they are safe."""
+
+    return send_whatsapp_messages(contacts, message_body)
+
 
 def send_whatsapp_alert(user, contacts, location_data):
     """WhatsApp alert function with FIXED Google Maps links"""
@@ -170,6 +274,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        ensure_runtime_columns(app)
         print("Database tables ensured")
 
 
@@ -287,6 +392,11 @@ def create_app():
     @login_required
     def settings():
         return render_template('settings.html')
+
+    @app.route('/focus-mode')
+    @login_required
+    def focus_mode():
+        return render_template('focus-mode.html')
     
     @app.route('/route-planner')
     @login_required
@@ -588,6 +698,102 @@ Please click the link above and confirm it opens at Chennai coordinates."""
             current_user.location_share_count = (current_user.location_share_count or 0) + 1
             db.session.commit()
             return jsonify({'status': 'success'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+
+    @app.route('/api/check_in_status')
+    @login_required
+    def get_check_in_status():
+        deadline = current_user.check_in_deadline
+        active = bool(current_user.check_in_active and deadline)
+        remaining_seconds = None
+
+        if active:
+            remaining_seconds = int((deadline - datetime.utcnow()).total_seconds())
+            if remaining_seconds <= 0:
+                remaining_seconds = 0
+
+        return jsonify({
+            'status': 'success',
+            'active': active,
+            'deadline': deadline.isoformat() if deadline else None,
+            'remaining_seconds': remaining_seconds,
+            'note': current_user.check_in_note
+        })
+
+    @app.route('/api/start_check_in_timer', methods=['POST'])
+    @login_required
+    def start_check_in_timer():
+        try:
+            data = request.get_json() or {}
+            minutes = int(data.get('minutes', 0))
+            note = (data.get('note') or '').strip()
+
+            if minutes < 1 or minutes > 180:
+                return jsonify({'status': 'error', 'message': 'Choose a timer between 1 and 180 minutes.'})
+
+            current_user.check_in_active = True
+            current_user.check_in_deadline = datetime.utcnow() + timedelta(minutes=minutes)
+            current_user.check_in_note = note[:200] if note else None
+            db.session.commit()
+
+            return jsonify({
+                'status': 'success',
+                'message': 'Check-in timer started.',
+                'deadline': current_user.check_in_deadline.isoformat(),
+                'note': current_user.check_in_note
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+
+    @app.route('/api/confirm_check_in', methods=['POST'])
+    @login_required
+    def confirm_check_in():
+        try:
+            current_user.check_in_active = False
+            current_user.check_in_deadline = None
+            current_user.check_in_note = None
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Check-in marked safe.'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+
+    @app.route('/api/check_in_timeout', methods=['POST'])
+    @login_required
+    def check_in_timeout():
+        try:
+            if not current_user.check_in_active or not current_user.check_in_deadline:
+                return jsonify({'status': 'success', 'message': 'No active timer.'})
+
+            if datetime.utcnow() < current_user.check_in_deadline:
+                remaining = int((current_user.check_in_deadline - datetime.utcnow()).total_seconds())
+                return jsonify({
+                    'status': 'pending',
+                    'message': 'Timer still active.',
+                    'remaining_seconds': remaining
+                })
+
+            alert_result = send_check_in_missed_alert(current_user)
+            current_user.check_in_active = False
+            current_user.check_in_deadline = None
+            current_user.check_in_note = None
+            db.session.commit()
+
+            if alert_result.get('status') != 'success':
+                return jsonify({
+                    'status': 'error',
+                    'message': alert_result.get('message', 'Could not send missed check-in alerts.'),
+                    'result': alert_result
+                })
+
+            return jsonify({
+                'status': 'success',
+                'message': 'Missed check-in alerts sent to trusted contacts.',
+                'result': alert_result
+            })
         except Exception as e:
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)})

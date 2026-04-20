@@ -11,263 +11,342 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-    /* Your red palette */
-    --red-1: #FDECEC;   /* lightest */
-    --red-2: #E57D8B;   /* soft pink */
-    --red-3: #EE1C2B;   /* bright red */
-    --red-4: #B60717;   /* deep red */
-    --red-5: #7A0204;   /* darkest */
+            --red-1: #FDECEC;
+            --red-2: #E57D8B;
+            --red-3: #EE1C2B;
+            --red-4: #B60717;
+            --red-5: #7A0204;
+            --primary-gradient: linear-gradient(135deg, var(--red-3) 0%, var(--red-5) 100%);
+            --primary-color: var(--red-3);
+            --secondary-color: var(--red-4);
+            --danger-color: #ffffff;
+            --success-color: var(--red-2);
+            --warning-color: #ffc107;
+        }
 
-    --primary-gradient: linear-gradient(135deg, var(--red-3) 0%, var(--red-5) 100%);
-    --primary-color: var(--red-3);
-    --secondary-color: var(--red-4);
-    --danger-color: #ffffff;
-    --success-color: var(--red-2);
-    --warning-color: #ffc107;
-}
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
 
-body {
-    background: var(--primary-gradient);
-    min-height: 100vh;
-    font-family: 'Inter', sans-serif;
-}
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
 
-/* Navbar */
-.navbar {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
+        .brand-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.8rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
 
-/* Logo Text */
-.brand-title {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    font-size: 1.8rem;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-decoration: none;
-}
+        .dashboard-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            border: none;
+            overflow: hidden;
+        }
 
-/* Cards */
-.dashboard-card {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    margin-bottom: 25px;
-    border: none;
-    overflow: hidden;
-}
+        .card-header-custom {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 1.5rem;
+        }
 
-.card-header-custom {
-    background: var(--primary-gradient);
-    color: white;
-    border: none;
-    padding: 1.5rem;
-}
+        .card-header-custom h4 {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+        }
 
-.card-header-custom h4 {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-}
+        .sos-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 280px;
+            background: linear-gradient(135deg, var(--red-2), var(--red-4));
+            border-radius: 20px;
+            margin: 1rem;
+            position: relative;
+        }
 
-/* SOS */
-.sos-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 280px;
-    background: linear-gradient(135deg, var(--red-2), var(--red-4));
-    border-radius: 20px;
-    margin: 1rem;
-    position: relative;
-}
+        .sos-button {
+            background: var(--red-4);
+            border: none;
+            border-radius: 50%;
+            width: 180px;
+            height: 180px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 0 0 rgba(128, 0, 0, 0.4);
+            animation: pulse 2s infinite;
+            transition: all 0.3s ease;
+            color: var(--danger-color);
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
 
-.sos-button {
-    background: var(--red-4);
-    border: none;
-    border-radius: 50%;
-    width: 180px;
-    height: 180px;
-    cursor: pointer;
-    position: relative;
-    box-shadow: 0 0 0 rgba(128, 0, 0, 0.4);
-    animation: pulse 2s infinite;
-    transition: all 0.3s ease;
-    color: var(--danger-color);
-    font-family: 'Poppins', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-}
+        .sos-button:active {
+            transform: scale(0.95);
+        }
 
-.sos-button:active {
-    transform: scale(0.95);
-}
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { box-shadow: 0 0 0 30px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
 
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-    70% { box-shadow: 0 0 0 30px rgba(255, 255, 255, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-}
+        .quick-action {
+            background: white;
+            border: 2px solid #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 100%;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
 
-/* Quick Actions */
-.quick-action {
-    background: white;
-    border: 2px solid #f8f9fa;
-    border-radius: 15px;
-    padding: 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    height: 100%;
-    text-decoration: none;
-    color: inherit;
-    display: block;
-}
+        .quick-action:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(238, 28, 43, 0.25);
+            border-color: var(--red-3);
+            color: inherit;
+        }
 
-.quick-action:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(238, 28, 43, 0.25);
-    border-color: var(--red-3);
-    color: inherit;
-}
+        .action-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-.action-icon {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
+        .emergency-contact {
+            background: var(--red-1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            border-left: 4px solid var(--red-3);
+            transition: all 0.3s ease;
+        }
 
-/* Emergency Contact */
-.emergency-contact {
-    background: var(--red-1);
-    border-radius: 15px;
-    padding: 1.5rem;
-    text-align: center;
-    border-left: 4px solid var(--red-3);
-    transition: all 0.3s ease;
-}
+        .emergency-contact:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
 
-.emergency-contact:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
+        .contact-icon {
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
 
-.contact-icon {
-    font-size: 2.2rem;
-    margin-bottom: 1rem;
-}
+        .user-welcome {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
 
-/* Welcome Box */
-.user-welcome {
-    background: var(--primary-gradient);
-    color: white;
-    border-radius: 15px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-}
+        .welcome-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
 
-.welcome-text {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-}
+        .sub-text {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
 
-.sub-text {
-    opacity: 0.9;
-    font-size: 1rem;
-}
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            border-left: 4px solid var(--red-2);
+        }
 
-/* Stats Cards */
-.stats-card {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    text-align: center;
-    border-left: 4px solid var(--red-2);
-}
+        .stat-number {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--red-4);
+        }
 
-.stat-number {
-    font-family: 'Poppins', sans-serif;
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--red-4);
-}
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
 
-.stat-label {
-    color: #666;
-    font-size: 0.9rem;
-}
+        .nav-link-custom {
+            color: #555;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
 
-/* Navbar links */
-.nav-link-custom {
-    color: #555;
-    font-weight: 500;
-    transition: color 0.3s ease;
-}
+        .nav-link-custom:hover {
+            color: var(--red-3);
+        }
 
-.nav-link-custom:hover {
-    color: var(--red-3);
-}
+        .dropdown-menu {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
 
-/* Dropdown */
-.dropdown-menu {
-    border-radius: 10px;
-    border: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
 
-.dropdown-item:hover {
-    background-color: #f8f9fa;
-}
+        .location-modal .location-text {
+            background: #fbe9e9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            cursor: pointer;
+            border: 2px dashed var(--red-2);
+            transition: all 0.3s ease;
+            position: relative;
+            word-break: break-word;
+        }
 
-/* Location Modal */
-.location-modal .location-text {
-    background: #fbe9e9;
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 1rem 0;
-    font-family: monospace;
-    cursor: pointer;
-    border: 2px dashed var(--red-2);
-    transition: all 0.3s ease;
-    position: relative;
-}
+        .location-modal .location-text:hover {
+            background: var(--red-1);
+            border-color: var(--red-3);
+        }
 
-.location-modal .location-text:hover {
-    background: var(--red-1);
-    border-color: var(--red-3);
-}
+        .location-modal .location-text.copied {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
 
-.location-modal .location-text.copied {
-    background: #d4edda;
-    border-color: #28a745;
-    color: #155724;
-}
+        .copy-indicator {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
 
-.copy-indicator {
-    position: absolute;
-    top: 5px;
-    right: 10px;
-    font-size: 0.8rem;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
+        .location-text.copied .copy-indicator {
+            opacity: 1;
+        }
 
-.location-text.copied .copy-indicator {
-    opacity: 1;
-}
+        .checkin-banner {
+            display: none;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            margin-top: 1.5rem;
+        }
+
+        .checkin-banner.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .checkin-countdown {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.35rem;
+        }
+
+        .fake-call-screen .modal-content {
+            border-radius: 28px;
+            overflow: hidden;
+            border: none;
+            background: linear-gradient(180deg, #10151f 0%, #1f2d3d 100%);
+            color: #fff;
+        }
+
+        .incoming-call {
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+            padding: 2.5rem 1.5rem 2rem;
+        }
+
+        .caller-avatar {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            background: rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .call-actions {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .call-btn {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .btn-answer {
+            background: #20bf55;
+        }
+
+        .btn-decline {
+            background: #eb4d4b;
+        }
+
+        .active-checkin-card {
+            background: linear-gradient(135deg, #fff7f7 0%, #ffe8eb 100%);
+            border: 1px solid #f5c2c7;
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .checkin-banner.active {
+                align-items: flex-start;
+            }
+
+            .call-actions {
+                gap: 1.5rem;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand brand-title" href="{{ url_for('home') }}">
@@ -284,8 +363,6 @@ body {
                 <a class="nav-link nav-link-custom me-3" href="{{ url_for('whatsapp_setup') }}">
                     <i class="fab fa-whatsapp me-1"></i> WhatsApp Setup
                 </a>
-
-                <!-- Settings Dropdown -->
                 <div class="dropdown">
                     <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -307,15 +384,12 @@ body {
         </div>
     </nav>
 
-    <!-- Main Dashboard -->
     <div class="container mt-4">
-        <!-- Welcome Section -->
         <div class="user-welcome">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <div class="welcome-text">Welcome, <span id="userName">User</span>! 👋</div>
-                    <div class="sub-text">Your safety is our priority. Stay protected with Aran's emergency features.
-                    </div>
+                    <div class="welcome-text">Welcome, <span id="userName">User</span>!</div>
+                    <div class="sub-text">Your safety is our priority. Stay protected with Aran's emergency features.</div>
                 </div>
                 <div class="col-md-4 text-end">
                     <div class="stats-card d-inline-block">
@@ -324,18 +398,23 @@ body {
                     </div>
                 </div>
             </div>
+            <div class="checkin-banner" id="checkinBanner">
+                <div>
+                    <div class="fw-semibold">Check-In Timer Active</div>
+                    <div class="small opacity-75" id="checkinNoteText">You asked ARAN to watch your time.</div>
+                </div>
+                <div class="checkin-countdown" id="checkinCountdown">00:00</div>
+                <button class="btn btn-light btn-sm" onclick="confirmCheckIn()">I'm Safe</button>
+            </div>
         </div>
 
-        <!-- Emergency SOS Section -->
         <div class="dashboard-card">
             <div class="card-header-custom">
                 <h4><i class="fas fa-bell me-2"></i> Emergency SOS</h4>
             </div>
             <div class="card-body p-4">
                 <div class="sos-container">
-                    <button class="sos-button" id="sosButton" onclick="triggerSOS()">
-                        SOS
-                    </button>
+                    <button class="sos-button" id="sosButton" onclick="triggerSOS()">SOS</button>
                 </div>
                 <p class="text-center text-muted mt-3 mb-0">
                     <i class="fas fa-info-circle me-1"></i>
@@ -344,53 +423,77 @@ body {
             </div>
         </div>
 
-        <!-- Quick Actions -->
         <div class="dashboard-card">
             <div class="card-header-custom">
                 <h4><i class="fas fa-bolt me-2"></i> Quick Actions</h4>
             </div>
             <div class="card-body p-4">
                 <div class="row">
-                    <div class="col-md-4 col-6 mb-3">
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
                         <a class="quick-action" onclick="shareLocation()">
-                            <div class="action-icon">
-                                <i class="fas fa-location-arrow"></i>
-                            </div>
+                            <div class="action-icon"><i class="fas fa-location-arrow"></i></div>
                             <div class="action-text">
                                 <strong>Share Location</strong>
                                 <p class="text-muted mb-0 small">Share your current location</p>
                             </div>
                         </a>
                     </div>
-                    <div class="col-md-4 col-6 mb-3">
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
                         <a class="quick-action" href="{{ url_for('route_planner') }}">
-                            <div class="action-icon">
-                                <i class="fas fa-route"></i>
-                            </div>
+                            <div class="action-icon"><i class="fas fa-route"></i></div>
                             <div class="action-text">
                                 <strong>Safe Route</strong>
                                 <p class="text-muted mb-0 small">Plan safest path</p>
                             </div>
                         </a>
                     </div>
-                    <div class="col-md-4 col-6 mb-3">
-                        <a class="quick-action" onclick="safetyTips()">
-                            <div class="action-icon">
-                                <i class="fas fa-lightbulb"></i>
-                            </div>
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
+                        <a class="quick-action" onclick="openCheckInModal()">
+                            <div class="action-icon"><i class="fas fa-hourglass-half"></i></div>
                             <div class="action-text">
-                                <strong>Safety Tips</strong>
-                                <p class="text-muted mb-0 small">Important safety guidelines</p>
+                                <strong>Check-In Timer</strong>
+                                <p class="text-muted mb-0 small">Auto-alert if you miss check-in</p>
                             </div>
                         </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
+                        <a class="quick-action" onclick="showFakeCall()">
+                            <div class="action-icon"><i class="fas fa-phone-volume"></i></div>
+                            <div class="action-text">
+                                <strong>Fake Call</strong>
+                                <p class="text-muted mb-0 small">Trigger a discreet escape screen</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="row mt-1">
+                    <div class="col-lg-6 mb-3">
+                        <div class="active-checkin-card">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                <div>
+                                    <div class="fw-semibold text-danger">Missed Check-In Protection</div>
+                                    <div class="small text-muted">Set a timer before travel. If you do not confirm safety, ARAN will alert trusted contacts on WhatsApp.</div>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm" onclick="openCheckInModal()">Start Timer</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-3">
+                        <div class="active-checkin-card">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                <div>
+                                    <div class="fw-semibold text-danger">Quick Escape Mode</div>
+                                    <div class="small text-muted">Show a realistic incoming call, then jump into a neutral notes screen if you need to exit the page quickly.</div>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm" onclick="goToFocusMode()">Open Safe Screen</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Emergency Contacts & Stats -->
         <div class="row">
-            <!-- Emergency Contacts -->
             <div class="col-md-8">
                 <div class="dashboard-card">
                     <div class="card-header-custom">
@@ -400,9 +503,7 @@ body {
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <div class="emergency-contact">
-                                    <div class="contact-icon text-danger">
-                                        <i class="fas fa-police-box"></i>
-                                    </div>
+                                    <div class="contact-icon text-danger"><i class="fas fa-police-box"></i></div>
                                     <h5>Police</h5>
                                     <p class="mb-2">Emergency: <strong>100</strong></p>
                                     <button class="btn btn-sm btn-outline-danger" onclick="callNumber('100')">
@@ -412,9 +513,7 @@ body {
                             </div>
                             <div class="col-md-4 mb-3">
                                 <div class="emergency-contact">
-                                    <div class="contact-icon text-primary">
-                                        <i class="fas fa-ambulance"></i>
-                                    </div>
+                                    <div class="contact-icon text-primary"><i class="fas fa-ambulance"></i></div>
                                     <h5>Ambulance</h5>
                                     <p class="mb-2">Emergency: <strong>108</strong></p>
                                     <button class="btn btn-sm btn-outline-primary" onclick="callNumber('108')">
@@ -424,9 +523,7 @@ body {
                             </div>
                             <div class="col-md-4 mb-3">
                                 <div class="emergency-contact">
-                                    <div class="contact-icon text-success">
-                                        <i class="fas fa-helmet-safety"></i>
-                                    </div>
+                                    <div class="contact-icon text-success"><i class="fas fa-helmet-safety"></i></div>
                                     <h5>Women Helpline</h5>
                                     <p class="mb-2">Emergency: <strong>1091</strong></p>
                                     <button class="btn btn-sm btn-outline-success" onclick="callNumber('1091')">
@@ -439,7 +536,6 @@ body {
                 </div>
             </div>
 
-            <!-- Quick Stats -->
             <div class="col-md-4">
                 <div class="dashboard-card">
                     <div class="card-header-custom">
@@ -455,8 +551,8 @@ body {
                             <div class="stat-label">Location Shares</div>
                         </div>
                         <div class="stats-card mb-3">
-                            <div class="stat-number" id="safetyScore">100%</div>
-                            <div class="stat-label">Safety Score</div>
+                            <div class="stat-number" id="timerStatus">Off</div>
+                            <div class="stat-label">Check-In Timer</div>
                         </div>
                     </div>
                 </div>
@@ -464,7 +560,6 @@ body {
         </div>
     </div>
 
-    <!-- Location Share Modal -->
     <div class="modal fade" id="locationModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content location-modal">
@@ -474,13 +569,13 @@ body {
                 </div>
                 <div class="modal-body">
                     <p class="text-muted">Select and Copy the Location:</p>
-                    <div class="location-text" id="locationText" onclick="copyLocation(this)">
+                    <div class="location-text" id="locationText" onclick="copyTextFromElement('locationText')">
                         Loading location...
                         <span class="copy-indicator"><i class="fas fa-check"></i> Copied!</span>
                     </div>
                     <div class="mt-3">
                         <strong>Google Maps Link:</strong>
-                        <div class="location-text" id="mapsLink" onclick="copyMapsLink(this)">
+                        <div class="location-text" id="mapsLink" onclick="copyTextFromElement('mapsLink')">
                             Loading maps link...
                             <span class="copy-indicator"><i class="fas fa-check"></i> Copied!</span>
                         </div>
@@ -490,10 +585,74 @@ body {
         </div>
     </div>
 
-    <!-- JavaScript -->
+    <div class="modal fade" id="checkInModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-hourglass-half me-2"></i>Start Check-In Timer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="checkInMinutes" class="form-label">Minutes until you should check in</label>
+                        <select id="checkInMinutes" class="form-select">
+                            <option value="5">5 minutes</option>
+                            <option value="10">10 minutes</option>
+                            <option value="15" selected>15 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">60 minutes</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="checkInNote" class="form-label">Destination or note</label>
+                        <input id="checkInNote" class="form-control" placeholder="Going from office to home">
+                    </div>
+                    <div class="alert alert-warning mb-0">
+                        If you do not tap <strong>I'm Safe</strong> before the timer ends, ARAN will notify your trusted contacts.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="startCheckInTimer()">Start Timer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade fake-call-screen" id="fakeCallModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="incoming-call">
+                    <div>
+                        <div class="small text-uppercase opacity-75 mb-3">Incoming call</div>
+                        <div class="caller-avatar"><i class="fas fa-user-shield"></i></div>
+                        <h2 class="h3 mb-1" id="callerName">Aunt Priya</h2>
+                        <div class="opacity-75">Mobile</div>
+                        <div class="mt-4 small opacity-75">Use this as a quick social exit or leave the screen safely.</div>
+                    </div>
+                    <div>
+                        <div class="call-actions">
+                            <button class="call-btn btn-decline" onclick="endFakeCall()"><i class="fas fa-phone-slash"></i></button>
+                            <button class="call-btn btn-answer" onclick="answerFakeCall()"><i class="fas fa-phone"></i></button>
+                        </div>
+                        <div class="mt-3 small opacity-75">Decline to close. Answer to open a neutral notes page.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Load user name and stats
+        let checkInDeadlineMs = null;
+        let checkInInterval = null;
+        let timeoutTriggered = false;
+        let fakeCallModal = null;
+        let fakeCallAudio = null;
+
         document.addEventListener('DOMContentLoaded', function () {
+            fakeCallModal = new bootstrap.Modal(document.getElementById('fakeCallModal'));
+
             fetch('/api/get_user_profile')
                 .then(response => response.json())
                 .then(data => {
@@ -501,15 +660,14 @@ body {
                     document.getElementById('sosCount').textContent = data.sos_count;
                     document.getElementById('locationShares').textContent = data.location_share_count;
                 })
-                .catch(error => {
-                    console.error('Error loading user data:', error);
-                });
+                .catch(error => console.error('Error loading user data:', error));
+
+            loadCheckInStatus();
+            setInterval(loadCheckInStatus, 15000);
         });
 
-        // SOS Functionality
         function triggerSOS() {
-            if (confirm('🚨 ARE YOU IN IMMEDIATE DANGER?\n\nThis will send emergency alerts to ALL your trusted contacts with your location.')) {
-                // Get user's location
+            if (confirm('ARE YOU IN IMMEDIATE DANGER?\n\nThis will send emergency alerts to ALL your trusted contacts with your location.')) {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         function (position) {
@@ -518,77 +676,59 @@ body {
                                 lng: position.coords.longitude
                             };
 
-                            // Send SOS to backend
                             fetch('/api/trigger_sos', {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
+                                headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify(location)
                             })
                                 .then(response => response.json())
-                                .then(data => {
-                                    // Update SOS count
-                                    fetch('/api/get_user_profile')
-                                        .then(response => response.json())
-                                        .then(profileData => {
-                                            document.getElementById('sosCount').textContent = profileData.sos_count;
-                                        });
-
-                                    alert('🚨 EMERGENCY ALERT SENT!\n\nHelp is on the way!\nYour location has been shared with ALL emergency contacts.');
-                                    playAlarm();
-                                })
-                                .catch(error => {
-                                    alert('🚨 EMERGENCY ALERT SENT!\n\nHelp is on the way!');
+                                .then(() => refreshProfileStats())
+                                .finally(() => {
+                                    alert('EMERGENCY ALERT SENT!\n\nHelp is on the way.\nYour location has been shared with all emergency contacts.');
                                     playAlarm();
                                 });
                         },
-                        function (error) {
-                            // Location not available, still send SOS
+                        function () {
                             fetch('/api/trigger_sos', {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
+                                headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({})
                             })
                                 .then(response => response.json())
-                                .then(data => {
-                                    // Update SOS count
-                                    fetch('/api/get_user_profile')
-                                        .then(response => response.json())
-                                        .then(profileData => {
-                                            document.getElementById('sosCount').textContent = profileData.sos_count;
-                                        });
-
-                                    alert('🚨 EMERGENCY ALERT SENT!\n\nHelp is on the way!');
+                                .then(() => refreshProfileStats())
+                                .finally(() => {
+                                    alert('EMERGENCY ALERT SENT!\n\nHelp is on the way.');
                                     playAlarm();
                                 });
                         }
                     );
                 } else {
-                    alert('🚨 EMERGENCY ALERT SENT!\n\nHelp is on the way!');
+                    alert('EMERGENCY ALERT SENT!\n\nHelp is on the way.');
                     playAlarm();
                 }
             }
         }
 
+        function refreshProfileStats() {
+            fetch('/api/get_user_profile')
+                .then(response => response.json())
+                .then(profileData => {
+                    document.getElementById('sosCount').textContent = profileData.sos_count;
+                    document.getElementById('locationShares').textContent = profileData.location_share_count;
+                });
+        }
+
         function playAlarm() {
-            // Create alarm sound
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
-
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
-
                 oscillator.frequency.value = 800;
                 oscillator.type = 'sine';
-
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 3);
-
                 oscillator.start(audioContext.currentTime);
                 oscillator.stop(audioContext.currentTime + 3);
             } catch (error) {
@@ -596,53 +736,231 @@ body {
             }
         }
 
-        // Share Location with Copy Functionality
         function shareLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function (position) {
-                    const lat = position.coords.latitude.toFixed(6);
-                    const lng = position.coords.longitude.toFixed(6);
-                    const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
-                    const locationText = `Latitude: ${lat}, Longitude: ${lng}`;
-
-                    // Update modal content
-                    document.getElementById('locationText').textContent = locationText;
-                    document.getElementById('mapsLink').textContent = mapUrl;
-
-                    // Increment location share count
-                    fetch('/api/increment_location_share', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
-                    })
-                        .then(() => {
-                            // Update location share count
-                            fetch('/api/get_user_profile')
-                                .then(response => response.json())
-                                .then(profileData => {
-                                    document.getElementById('locationShares').textContent = profileData.location_share_count;
-                                });
-                        });
-
-                    // Show modal
-                    const modal = new bootstrap.Modal(document.getElementById('locationModal'));
-                    modal.show();
-                }, function (error) {
-                    alert('❌ Could not get your location. Please enable location services.');
-                });
-            } else {
-                alert('❌ Location sharing not supported by your browser.');
+            if (!navigator.geolocation) {
+                alert('Location sharing is not supported by your browser.');
+                return;
             }
+
+            navigator.geolocation.getCurrentPosition(function (position) {
+                const lat = position.coords.latitude.toFixed(6);
+                const lng = position.coords.longitude.toFixed(6);
+                const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
+                document.getElementById('locationText').childNodes[0].nodeValue = `Latitude: ${lat}, Longitude: ${lng}`;
+                document.getElementById('mapsLink').childNodes[0].nodeValue = mapUrl;
+
+                fetch('/api/increment_location_share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                }).then(() => refreshProfileStats());
+
+                new bootstrap.Modal(document.getElementById('locationModal')).show();
+            }, function () {
+                alert('Could not get your location. Please enable location services.');
+            });
         }
 
-      
+        function copyTextFromElement(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.childNodes[0].nodeValue.trim();
+
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    element.classList.add('copied');
+                    setTimeout(() => element.classList.remove('copied'), 1400);
+                })
+                .catch(() => alert('Could not copy automatically. Please copy manually.'));
+        }
+
         function safetyTips() {
-            alert('💡 Important Safety Tips:\n\n• Always share your live location with trusted contacts\n• Use well-lit and populated routes\n• Keep emergency numbers handy\n• Trust your instincts - if something feels wrong, leave\n• Avoid isolated areas, especially at night\n• Keep your phone charged when traveling');
+            alert('Important Safety Tips:\n\n- Always share your live location with trusted contacts\n- Use well-lit and populated routes\n- Keep emergency numbers handy\n- Trust your instincts\n- Avoid isolated areas at night\n- Keep your phone charged');
         }
 
         function callNumber(number) {
-            alert(`📞 Calling ${number}...\n\nIn a real mobile app, this would automatically dial the emergency number.`);
+            alert(`Calling ${number}...\n\nIn a real mobile app, this would automatically dial the emergency number.`);
+        }
+
+        function openCheckInModal() {
+            new bootstrap.Modal(document.getElementById('checkInModal')).show();
+        }
+
+        function startCheckInTimer() {
+            const minutes = parseInt(document.getElementById('checkInMinutes').value, 10);
+            const note = document.getElementById('checkInNote').value.trim();
+
+            fetch('/api/start_check_in_timer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ minutes, note })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Unable to start timer.');
+                    }
+
+                    bootstrap.Modal.getInstance(document.getElementById('checkInModal')).hide();
+                    document.getElementById('checkInNote').value = '';
+                    timeoutTriggered = false;
+                    applyCheckInState({
+                        active: true,
+                        deadline: data.deadline,
+                        note: data.note
+                    });
+                    alert('Check-in timer started. ARAN will remind you to confirm safety.');
+                })
+                .catch(error => alert(error.message || 'Could not start check-in timer.'));
+        }
+
+        function loadCheckInStatus() {
+            fetch('/api/check_in_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        applyCheckInState(data);
+                    }
+                })
+                .catch(error => console.error('Check-in status error:', error));
+        }
+
+        function applyCheckInState(data) {
+            const banner = document.getElementById('checkinBanner');
+            const timerStatus = document.getElementById('timerStatus');
+            const noteText = document.getElementById('checkinNoteText');
+
+            if (data.active && data.deadline) {
+                banner.classList.add('active');
+                timerStatus.textContent = 'On';
+                noteText.textContent = data.note ? `Destination: ${data.note}` : 'You asked ARAN to watch your check-in.';
+                checkInDeadlineMs = new Date(data.deadline + 'Z').getTime();
+                startCountdown();
+            } else {
+                banner.classList.remove('active');
+                timerStatus.textContent = 'Off';
+                checkInDeadlineMs = null;
+                timeoutTriggered = false;
+                if (checkInInterval) {
+                    clearInterval(checkInInterval);
+                    checkInInterval = null;
+                }
+                document.getElementById('checkinCountdown').textContent = '00:00';
+            }
+        }
+
+        function startCountdown() {
+            if (checkInInterval) {
+                clearInterval(checkInInterval);
+            }
+
+            updateCountdown();
+            checkInInterval = setInterval(updateCountdown, 1000);
+        }
+
+        function updateCountdown() {
+            if (!checkInDeadlineMs) {
+                return;
+            }
+
+            const remainingMs = checkInDeadlineMs - Date.now();
+            const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+            const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+            const seconds = String(remainingSeconds % 60).padStart(2, '0');
+            document.getElementById('checkinCountdown').textContent = `${minutes}:${seconds}`;
+
+            if (remainingSeconds === 0 && !timeoutTriggered) {
+                timeoutTriggered = true;
+                handleCheckInTimeout();
+            }
+        }
+
+        function confirmCheckIn() {
+            fetch('/api/confirm_check_in', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Could not confirm safety.');
+                    }
+
+                    applyCheckInState({ active: false });
+                    alert('Check-in completed. Glad you are safe.');
+                })
+                .catch(error => alert(error.message || 'Could not confirm check-in.'));
+        }
+
+        function handleCheckInTimeout() {
+            fetch('/api/check_in_timeout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        applyCheckInState({ active: false });
+                        alert('Check-in missed. Trusted contacts have been alerted.');
+                    } else if (data.status === 'pending') {
+                        timeoutTriggered = false;
+                        loadCheckInStatus();
+                    } else {
+                        timeoutTriggered = false;
+                        alert(data.message || 'Could not send missed check-in alerts.');
+                    }
+                })
+                .catch(() => {
+                    timeoutTriggered = false;
+                    alert('Check-in timer expired. Please verify whether alerts were sent.');
+                });
+        }
+
+        function showFakeCall() {
+            fakeCallModal.show();
+            playFakeRing();
+        }
+
+        function endFakeCall() {
+            stopFakeRing();
+            fakeCallModal.hide();
+        }
+
+        function answerFakeCall() {
+            stopFakeRing();
+            fakeCallModal.hide();
+            setTimeout(goToFocusMode, 250);
+        }
+
+        function goToFocusMode() {
+            window.location.href = "{{ url_for('focus_mode') }}";
+        }
+
+        function playFakeRing() {
+            stopFakeRing();
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                const context = new AudioContextClass();
+                fakeCallAudio = setInterval(() => {
+                    const oscillator = context.createOscillator();
+                    const gainNode = context.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(context.destination);
+                    oscillator.frequency.value = 520;
+                    gainNode.gain.setValueAtTime(0.001, context.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.45);
+                    oscillator.start(context.currentTime);
+                    oscillator.stop(context.currentTime + 0.45);
+                }, 900);
+            } catch (error) {
+                console.log('Fake ringtone unavailable');
+            }
+        }
+
+        function stopFakeRing() {
+            if (fakeCallAudio) {
+                clearInterval(fakeCallAudio);
+                fakeCallAudio = null;
+            }
         }
     </script>
 
