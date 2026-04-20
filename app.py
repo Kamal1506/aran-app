@@ -953,6 +953,8 @@ Please click the link above and confirm it opens at Chennai coordinates."""
                     'safety_score': safety_score,
                     'start_address': leg['start_address'],
                     'end_address': leg['end_address'],
+                    'start_location': leg['start_location'],
+                    'end_location': leg['end_location'],
                     'steps': steps,
                     'overview_polyline': route['overview_polyline'],
                     'warnings': route.get('warnings', []),

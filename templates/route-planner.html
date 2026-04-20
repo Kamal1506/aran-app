@@ -373,6 +373,9 @@
         let heatmapMarkers = [];
         let heatmapVisible = false;
         let currentHeatmapData = null;
+        let destinationAutocomplete = null;
+        let selectedDestinationPlace = null;
+        let geocoder = null;
 
         // Initialize Map with Directions Service
         function initMap() {
@@ -410,6 +413,7 @@
 
             // Initialize Directions Service
             directionsService = new google.maps.DirectionsService();
+            geocoder = new google.maps.Geocoder();
             directionsRenderer = new google.maps.DirectionsRenderer({
                 map: map,
                 suppressMarkers: false,
@@ -420,6 +424,42 @@
                 },
                 markerOptions: {
                     visible: true
+                }
+            });
+
+            const destinationInput = document.getElementById('destination');
+            destinationAutocomplete = new google.maps.places.Autocomplete(destinationInput, {
+                fields: ['formatted_address', 'geometry', 'name', 'place_id'],
+                types: ['geocode'],
+                componentRestrictions: { country: 'in' }
+            });
+
+            destinationAutocomplete.addListener('place_changed', function () {
+                const place = destinationAutocomplete.getPlace();
+                if (!place || !place.geometry || !place.geometry.location) {
+                    selectedDestinationPlace = null;
+                    document.getElementById('destCoords').textContent = 'Select a suggested destination from the dropdown.';
+                    return;
+                }
+
+                selectedDestinationPlace = {
+                    name: place.name,
+                    formatted_address: place.formatted_address || place.name,
+                    place_id: place.place_id,
+                    location: {
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng()
+                    }
+                };
+
+                document.getElementById('destination').value = selectedDestinationPlace.formatted_address;
+                document.getElementById('destCoords').textContent = `📍 ${selectedDestinationPlace.location.lat.toFixed(4)}, ${selectedDestinationPlace.location.lng.toFixed(4)}`;
+            });
+
+            destinationInput.addEventListener('input', function () {
+                selectedDestinationPlace = null;
+                if (!destinationInput.value.trim()) {
+                    document.getElementById('destCoords').textContent = '';
                 }
             });
 
@@ -481,7 +521,7 @@
         }
 
         // Find safe route using REAL Google Maps API
-        function findSafeRoute() {
+        async function findSafeRoute() {
             const destination = document.getElementById('destination').value;
             const findRouteBtn = document.getElementById('findRouteBtn');
 
@@ -512,6 +552,19 @@
             clearMarkers();
             clearHeatmap();
 
+            let resolvedDestination;
+            try {
+                resolvedDestination = await resolveDestinationSelection(destination);
+                document.getElementById('destination').value = resolvedDestination.formatted_address;
+                document.getElementById('destCoords').textContent = `📍 ${resolvedDestination.location.lat.toFixed(4)}, ${resolvedDestination.location.lng.toFixed(4)}`;
+            } catch (error) {
+                alert(error.message || 'Please choose a valid destination from the suggestions.');
+                findRouteBtn.innerHTML = '<i class="fas fa-search me-2"></i>Find Route';
+                findRouteBtn.disabled = false;
+                document.getElementById('routeOptions').innerHTML = '<p class="text-center text-danger">Please select a valid destination suggestion.</p>';
+                return;
+            }
+
             // Get user's current location first
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -529,8 +582,9 @@
                             },
                             body: JSON.stringify({
                                 origin: 'Current Location',
-                                destination: destination,
+                                destination: resolvedDestination.formatted_address,
                                 userLocation: userLocation,
+                                destinationLocation: resolvedDestination.location,
                                 travel_mode: 'driving'
                             })
                         })
@@ -541,10 +595,10 @@
                                     displayRealRouteInfo(data.routes[0]);
                                     displayRealRouteOptions(data.routes);
                                     drawRealRouteOnMap(data.routes[0]);
-                                    loadSafetyHeatmap(userLocation, getRouteDestinationPoint(data.routes[0]));
+                                    loadSafetyHeatmap(userLocation, resolvedDestination.location);
                                 } else {
                                     // Fallback to mock data
-                                    fallbackToMockRoute(userLocation, destination);
+                                    fallbackToMockRoute(userLocation, resolvedDestination);
                                 }
 
                                 // Reset button
@@ -580,8 +634,8 @@
 
             // Create a DirectionsRequest for the selected route
             const request = {
-                origin: route.start_address,
-                destination: route.end_address,
+                origin: route.start_location || currentLocation,
+                destination: route.end_location || route.end_address,
                 travelMode: 'DRIVING',
                 provideRouteAlternatives: false
             };
@@ -667,9 +721,10 @@
             currentMarkers.push(startMarker);
 
             // Estimate destination coordinates (this is a fallback - in real app you'd geocode the address)
-            const destLat = currentLocation.lat + 0.01;
-            const destLng = currentLocation.lng + 0.01;
-            const destLocation = { lat: destLat, lng: destLng };
+            const destLocation = route.end_location || {
+                lat: currentLocation.lat + 0.01,
+                lng: currentLocation.lng + 0.01
+            };
 
             // Add destination marker
             const destMarker = new google.maps.Marker({
@@ -903,7 +958,7 @@
                 },
                 body: JSON.stringify({
                     origin: 'Current Location',
-                    destination: destination,
+                    destination: destination.formatted_address,
                     userLocation: userLocation
                 })
             })
@@ -914,7 +969,9 @@
                         const mockRoutes = data.routes.map(route => ({
                             ...route,
                             start_address: "Current Location",
-                            end_address: destination,
+                            end_address: destination.formatted_address,
+                            start_location: userLocation,
+                            end_location: destination.location,
                             distance: typeof route.distance === 'string' ? { text: route.distance, value: 5200 } : route.distance,
                             duration: typeof route.duration === 'string' ? { text: route.duration, value: 900 } : route.duration,
                             steps: Array.isArray(route.steps) ? route.steps.map(step =>
@@ -932,13 +989,60 @@
 
                         // Draw mock route
                         drawSimpleRoute(mockRoutes[0]);
-                        loadSafetyHeatmap(userLocation, getRouteDestinationPoint(mockRoutes[0]));
+                        loadSafetyHeatmap(userLocation, destination.location);
                     }
                 });
         }
 
+        function resolveDestinationSelection(destinationText) {
+            if (selectedDestinationPlace && selectedDestinationPlace.formatted_address) {
+                return Promise.resolve(selectedDestinationPlace);
+            }
+
+            return new Promise((resolve, reject) => {
+                if (!geocoder) {
+                    reject(new Error('Destination lookup is not ready yet.'));
+                    return;
+                }
+
+                geocoder.geocode(
+                    {
+                        address: destinationText,
+                        region: 'in',
+                        componentRestrictions: { country: 'IN' }
+                    },
+                    (results, status) => {
+                        if (status !== 'OK' || !results || !results.length) {
+                            reject(new Error('Destination not found. Please choose from the dropdown suggestions.'));
+                            return;
+                        }
+
+                        const first = results[0];
+                        selectedDestinationPlace = {
+                            name: first.formatted_address,
+                            formatted_address: first.formatted_address,
+                            place_id: first.place_id,
+                            location: {
+                                lat: first.geometry.location.lat(),
+                                lng: first.geometry.location.lng()
+                            }
+                        };
+
+                        resolve(selectedDestinationPlace);
+                    }
+                );
+            });
+        }
+
         // Load nearby safe places
         function getRouteDestinationPoint(route) {
+            if (route.end_location && route.end_location.lat && route.end_location.lng) {
+                return {
+                    lat: route.end_location.lat,
+                    lng: route.end_location.lng
+                };
+            }
+
             if (route.bounds && route.bounds.northeast && route.bounds.southwest) {
                 return {
                     lat: (route.bounds.northeast.lat + route.bounds.southwest.lat) / 2,
