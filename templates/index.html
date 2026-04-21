@@ -36,6 +36,15 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
 
+        .navbar-toggler {
+            border: none;
+            box-shadow: none !important;
+        }
+
+        .mobile-nav {
+            width: 100%;
+        }
+
         .brand-title {
             font-family: 'Poppins', sans-serif;
             font-weight: 700;
@@ -351,6 +360,29 @@
             padding: 1rem;
         }
 
+        .feature-chip {
+            background: #fff6f6;
+            border: 1px solid #f4c2c7;
+            border-radius: 14px;
+            padding: 1rem;
+            height: 100%;
+        }
+
+        .recording-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc3545;
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: pulse 1.2s infinite;
+        }
+
+        .status-list {
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
         @media (max-width: 768px) {
             .checkin-banner.active {
                 align-items: flex-start;
@@ -358,6 +390,16 @@
 
             .call-actions {
                 gap: 1.5rem;
+            }
+
+            .mobile-nav .nav-link,
+            .mobile-nav .dropdown-toggle {
+                padding: 0.7rem 0;
+            }
+
+            .user-welcome .text-end {
+                text-align: left !important;
+                margin-top: 1rem;
             }
         }
     </style>
@@ -369,33 +411,39 @@
             <a class="navbar-brand brand-title" href="{{ url_for('home') }}">
                 <i class="fas fa-shield-alt"></i> ARAN
             </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-            <div class="navbar-nav ms-auto align-items-center">
-                <a class="nav-link nav-link-custom me-3" href="{{ url_for('profile') }}">
-                    <i class="fas fa-user-circle me-1"></i> My Profile
-                </a>
-                <a class="nav-link nav-link-custom me-3" href="{{ url_for('route_planner') }}">
-                    <i class="fas fa-route me-1"></i> Route Planner
-                </a>
-                <a class="nav-link nav-link-custom me-3" href="{{ url_for('whatsapp_setup') }}">
-                    <i class="fab fa-whatsapp me-1"></i> WhatsApp Setup
-                </a>
-                <div class="dropdown">
-                    <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <i class="fas fa-cog me-1"></i> Settings
+            <div class="collapse navbar-collapse" id="mainNav">
+                <div class="navbar-nav ms-auto align-items-lg-center mobile-nav">
+                    <a class="nav-link nav-link-custom me-lg-3" href="{{ url_for('profile') }}">
+                        <i class="fas fa-user-circle me-1"></i> My Profile
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('settings') }}">
-                                <i class="fas fa-info-circle me-2"></i> About App
-                            </a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                                <i class="fas fa-sign-out-alt me-2"></i> Logout
-                            </a></li>
-                    </ul>
+                    <a class="nav-link nav-link-custom me-lg-3" href="{{ url_for('route_planner') }}">
+                        <i class="fas fa-route me-1"></i> Route Planner
+                    </a>
+                    <a class="nav-link nav-link-custom me-lg-3" href="{{ url_for('whatsapp_setup') }}">
+                        <i class="fab fa-whatsapp me-1"></i> WhatsApp Setup
+                    </a>
+                    <div class="dropdown">
+                        <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fas fa-cog me-1"></i> Settings
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('settings') }}">
+                                    <i class="fas fa-info-circle me-2"></i> About App
+                                </a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                </a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -443,7 +491,7 @@
                 </div>
                 <p class="text-center text-muted mt-3 mb-0">
                     <i class="fas fa-info-circle me-1"></i>
-                    Press in emergency. Alerts will be sent to ALL your trusted contacts immediately.
+                    Press in emergency. A 5-second danger countdown will begin before alerts are sent.
                 </p>
             </div>
         </div>
@@ -496,6 +544,42 @@
                             <div class="action-text">
                                 <strong>Fake Call</strong>
                                 <p class="text-muted mb-0 small">Trigger a discreet escape screen</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
+                        <a class="quick-action" onclick="toggleShakeSOS()">
+                            <div class="action-icon"><i class="fas fa-mobile-screen-button"></i></div>
+                            <div class="action-text">
+                                <strong>Shake to SOS</strong>
+                                <p class="text-muted mb-0 small" id="shakeStatusLabel">Enable motion trigger</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
+                        <a class="quick-action" onclick="openVoiceEvidenceModal()">
+                            <div class="action-icon"><i class="fas fa-microphone-lines"></i></div>
+                            <div class="action-text">
+                                <strong>Voice Evidence</strong>
+                                <p class="text-muted mb-0 small">Record emergency audio proof</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
+                        <a class="quick-action" onclick="openChecklistModal()">
+                            <div class="action-icon"><i class="fas fa-notes-medical"></i></div>
+                            <div class="action-text">
+                                <strong>Checklist Card</strong>
+                                <p class="text-muted mb-0 small">Medical and contact essentials</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
+                        <a class="quick-action" onclick="openAlertStatusModal()">
+                            <div class="action-icon"><i class="fas fa-user-check"></i></div>
+                            <div class="action-text">
+                                <strong>Alert Status</strong>
+                                <p class="text-muted mb-0 small">See trusted-contact delivery</p>
                             </div>
                         </a>
                     </div>
@@ -727,6 +811,124 @@
         </div>
     </div>
 
+    <div class="modal fade" id="dangerCountdownModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-triangle-exclamation text-danger me-2"></i>Danger Countdown</h5>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="text-muted mb-2" id="dangerCountdownReason">Emergency alert will be sent unless you cancel.</p>
+                    <div class="display-3 fw-bold text-danger" id="dangerCountdownValue">5</div>
+                    <div class="small text-muted">Cancel now if this was triggered by mistake.</div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary" onclick="cancelDangerCountdown()">Cancel Alert</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="voiceEvidenceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-microphone-lines me-2"></i>Voice Evidence</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="small text-muted mb-2">Record a short emergency note. The latest recording will be attached to future alerts.</div>
+                        <div id="recordingState" class="small text-danger d-none"><span class="recording-dot"></span>Recording in progress</div>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-danger" id="recordVoiceBtn" onclick="toggleVoiceRecording()">Start Recording</button>
+                        <button class="btn btn-outline-secondary" id="playVoiceBtn" onclick="playVoicePreview()" disabled>Play Preview</button>
+                        <button class="btn btn-outline-primary" id="uploadVoiceBtn" onclick="uploadVoiceEvidence()" disabled>Save Evidence</button>
+                    </div>
+                    <audio id="voicePreview" class="w-100 mt-3 d-none" controls></audio>
+                    <div class="mt-3 small" id="voiceEvidenceStatus">No recording saved yet.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="checklistModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-notes-medical me-2"></i>Emergency Checklist Card</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bloodGroupInput" class="form-label">Blood Group</label>
+                            <input id="bloodGroupInput" class="form-control" placeholder="O+">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Home Address</label>
+                            <div class="form-control bg-light" id="checklistHomeAddress">Not set yet</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="allergiesInput" class="form-label">Allergies</label>
+                        <input id="allergiesInput" class="form-control" placeholder="Penicillin, peanuts">
+                    </div>
+                    <div class="mb-3">
+                        <label for="medicalNotesInput" class="form-label">Medical Notes</label>
+                        <textarea id="medicalNotesInput" class="form-control" rows="3" placeholder="Asthma inhaler in bag, emergency medication details..."></textarea>
+                    </div>
+                    <div class="feature-chip mb-3">
+                        <div class="fw-semibold mb-2">Trusted Contacts</div>
+                        <div id="checklistContacts">Loading contacts...</div>
+                    </div>
+                    <div class="feature-chip">
+                        <div class="fw-semibold mb-2">Latest Voice Evidence</div>
+                        <div id="checklistVoiceEvidence" class="small text-muted">No voice evidence saved yet.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="saveChecklist()">Save Checklist</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="alertStatusModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-check me-2"></i>Trusted Contact Live Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="feature-chip mb-3">
+                        <div class="fw-semibold" id="latestAlertHeading">No alert has been sent yet.</div>
+                        <div class="small text-muted" id="latestAlertMeta">The next SOS or timed alert will appear here.</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="feature-chip">
+                                <div class="fw-semibold mb-2">Delivered</div>
+                                <div id="alertSentSummary" class="small text-muted mb-2">0 contacts</div>
+                                <div id="alertSentList" class="status-list small text-muted">No successful deliveries yet.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="feature-chip">
+                                <div class="fw-semibold mb-2">Failed</div>
+                                <div id="alertFailedSummary" class="small text-muted mb-2">0 contacts</div>
+                                <div id="alertFailedList" class="status-list small text-muted">No failures logged.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let checkInDeadlineMs = null;
         let checkInInterval = null;
@@ -736,18 +938,21 @@
         let journeyTimeoutTriggered = false;
         let fakeCallModal = null;
         let fakeCallAudio = null;
+        let dangerCountdownModal = null;
+        let dangerCountdownInterval = null;
+        let dangerCountdownRemaining = 5;
+        let mediaRecorder = null;
+        let voiceChunks = [];
+        let voiceBlob = null;
+        let shakeSOSActive = false;
+        let lastShakeAt = 0;
+        let latestProfile = null;
 
         document.addEventListener('DOMContentLoaded', function () {
             fakeCallModal = new bootstrap.Modal(document.getElementById('fakeCallModal'));
+            dangerCountdownModal = new bootstrap.Modal(document.getElementById('dangerCountdownModal'));
 
-            fetch('/api/get_user_profile')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('userName').textContent = data.name;
-                    document.getElementById('sosCount').textContent = data.sos_count;
-                    document.getElementById('locationShares').textContent = data.location_share_count;
-                })
-                .catch(error => console.error('Error loading user data:', error));
+            loadDashboardData();
 
             loadCheckInStatus();
             loadJourneyStatus();
@@ -756,55 +961,86 @@
         });
 
         function triggerSOS() {
-            if (confirm('ARE YOU IN IMMEDIATE DANGER?\n\nThis will send emergency alerts to ALL your trusted contacts with your location.')) {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        function (position) {
-                            const location = {
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude
-                            };
-
-                            fetch('/api/trigger_sos', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(location)
-                            })
-                                .then(response => response.json())
-                                .then(() => refreshProfileStats())
-                                .finally(() => {
-                                    alert('EMERGENCY ALERT SENT!\n\nHelp is on the way.\nYour location has been shared with all emergency contacts.');
-                                    playAlarm();
-                                });
-                        },
-                        function () {
-                            fetch('/api/trigger_sos', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({})
-                            })
-                                .then(response => response.json())
-                                .then(() => refreshProfileStats())
-                                .finally(() => {
-                                    alert('EMERGENCY ALERT SENT!\n\nHelp is on the way.');
-                                    playAlarm();
-                                });
-                        }
-                    );
-                } else {
-                    alert('EMERGENCY ALERT SENT!\n\nHelp is on the way.');
-                    playAlarm();
-                }
-            }
+            startDangerCountdown('Emergency alert will be sent unless you cancel.');
         }
 
-        function refreshProfileStats() {
+        function loadDashboardData() {
             fetch('/api/get_user_profile')
                 .then(response => response.json())
                 .then(profileData => {
+                    latestProfile = profileData;
+                    document.getElementById('userName').textContent = profileData.name;
                     document.getElementById('sosCount').textContent = profileData.sos_count;
                     document.getElementById('locationShares').textContent = profileData.location_share_count;
+                    if (document.getElementById('journeyStatus')) {
+                        document.getElementById('journeyStatus').textContent = profileData.journey_active ? 'On' : 'Off';
+                    }
+                    renderChecklistData(profileData);
+                    renderAlertStatus(profileData);
+                    renderVoiceEvidence(profileData);
                 });
+        }
+
+        function refreshProfileStats() {
+            loadDashboardData();
+        }
+
+        function startDangerCountdown(reasonText) {
+            cancelDangerCountdown(false);
+            dangerCountdownRemaining = 5;
+            document.getElementById('dangerCountdownReason').textContent = reasonText;
+            document.getElementById('dangerCountdownValue').textContent = dangerCountdownRemaining;
+            dangerCountdownModal.show();
+
+            dangerCountdownInterval = setInterval(() => {
+                dangerCountdownRemaining -= 1;
+                document.getElementById('dangerCountdownValue').textContent = Math.max(0, dangerCountdownRemaining);
+
+                if (dangerCountdownRemaining <= 0) {
+                    cancelDangerCountdown(false);
+                    dangerCountdownModal.hide();
+                    executeSOS();
+                }
+            }, 1000);
+        }
+
+        function cancelDangerCountdown(hideModal = true) {
+            if (dangerCountdownInterval) {
+                clearInterval(dangerCountdownInterval);
+                dangerCountdownInterval = null;
+            }
+
+            if (hideModal && dangerCountdownModal) {
+                dangerCountdownModal.hide();
+            }
+        }
+
+        function executeSOS() {
+            const sendSOS = (payload = {}) => {
+                fetch('/api/trigger_sos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => response.json())
+                    .then(() => refreshProfileStats())
+                    .finally(() => {
+                        alert('EMERGENCY ALERT SENT!\n\nHelp is on the way.\nYour location has been shared with all emergency contacts.');
+                        playAlarm();
+                    });
+            };
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => sendSOS({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    }),
+                    () => sendSOS({})
+                );
+            } else {
+                sendSOS({});
+            }
         }
 
         function playAlarm() {
@@ -876,6 +1112,50 @@
         function openJourneyModal() {
             new bootstrap.Modal(document.getElementById('journeyModal')).show();
         }
+
+        function toggleShakeSOS() {
+            if (shakeSOSActive) {
+                shakeSOSActive = false;
+                document.getElementById('shakeStatusLabel').textContent = 'Enable motion trigger';
+                alert('Shake to SOS disabled.');
+                return;
+            }
+
+            const enableMotion = () => {
+                shakeSOSActive = true;
+                document.getElementById('shakeStatusLabel').textContent = 'Shake trigger ON';
+                alert('Shake to SOS enabled. A strong shake will start the danger countdown.');
+            };
+
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(state => {
+                        if (state === 'granted') {
+                            enableMotion();
+                        } else {
+                            alert('Motion permission was denied.');
+                        }
+                    })
+                    .catch(() => alert('Could not enable motion access on this device.'));
+            } else {
+                enableMotion();
+            }
+        }
+
+        window.addEventListener('devicemotion', function (event) {
+            if (!shakeSOSActive || !event.accelerationIncludingGravity) {
+                return;
+            }
+
+            const { x = 0, y = 0, z = 0 } = event.accelerationIncludingGravity;
+            const magnitude = Math.sqrt(x * x + y * y + z * z);
+            const now = Date.now();
+
+            if (magnitude > 24 && now - lastShakeAt > 5000) {
+                lastShakeAt = now;
+                startDangerCountdown('Shake detected. SOS alert will be sent unless you cancel.');
+            }
+        });
 
         function startCheckInTimer() {
             const minutes = parseInt(document.getElementById('checkInMinutes').value, 10);
@@ -1179,6 +1459,206 @@
             } else {
                 sendTimeout({});
             }
+        }
+
+        function openVoiceEvidenceModal() {
+            renderVoiceEvidence(latestProfile);
+            new bootstrap.Modal(document.getElementById('voiceEvidenceModal')).show();
+        }
+
+        function toggleVoiceRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Voice recording is not supported in this browser.');
+                return;
+            }
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    voiceChunks = [];
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            voiceChunks.push(event.data);
+                        }
+                    };
+                    mediaRecorder.onstop = () => {
+                        voiceBlob = new Blob(voiceChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        const preview = document.getElementById('voicePreview');
+                        preview.src = URL.createObjectURL(voiceBlob);
+                        preview.classList.remove('d-none');
+                        document.getElementById('uploadVoiceBtn').disabled = false;
+                        document.getElementById('playVoiceBtn').disabled = false;
+                        document.getElementById('recordVoiceBtn').textContent = 'Start Recording';
+                        document.getElementById('recordingState').classList.add('d-none');
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    document.getElementById('recordVoiceBtn').textContent = 'Stop Recording';
+                    document.getElementById('recordingState').classList.remove('d-none');
+                })
+                .catch(() => alert('Microphone access is required to record voice evidence.'));
+        }
+
+        function playVoicePreview() {
+            const preview = document.getElementById('voicePreview');
+            if (preview.src) {
+                preview.play();
+            }
+        }
+
+        function uploadVoiceEvidence() {
+            if (!voiceBlob) {
+                alert('Record a voice note first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('audio', voiceBlob, 'voice-evidence.webm');
+
+            fetch('/api/upload_voice_evidence', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Could not save voice evidence.');
+                    }
+
+                    document.getElementById('voiceEvidenceStatus').innerHTML = `Saved successfully. <a href="${data.voice_note_url}" target="_blank">Open latest evidence</a>`;
+                    voiceBlob = null;
+                    document.getElementById('uploadVoiceBtn').disabled = true;
+                    refreshProfileStats();
+                })
+                .catch(error => alert(error.message || 'Could not upload voice evidence.'));
+        }
+
+        function renderVoiceEvidence(profileData) {
+            const status = document.getElementById('voiceEvidenceStatus');
+            if (!status) {
+                return;
+            }
+
+            if (profileData && profileData.latest_voice_note_url) {
+                status.innerHTML = `Latest evidence saved. <a href="${profileData.latest_voice_note_url}" target="_blank">Open audio file</a>`;
+            } else {
+                status.textContent = 'No recording saved yet.';
+            }
+        }
+
+        function openChecklistModal() {
+            loadChecklistData();
+            new bootstrap.Modal(document.getElementById('checklistModal')).show();
+        }
+
+        function loadChecklistData() {
+            Promise.all([
+                fetch('/api/get_user_profile').then(response => response.json()),
+                fetch('/api/get_emergency_contacts').then(response => response.json())
+            ])
+                .then(([profile, contacts]) => {
+                    latestProfile = profile;
+                    renderChecklistData(profile, contacts);
+                })
+                .catch(error => console.error('Checklist load error:', error));
+        }
+
+        function renderChecklistData(profileData, contacts) {
+            if (!profileData) {
+                return;
+            }
+
+            const blood = document.getElementById('bloodGroupInput');
+            const allergies = document.getElementById('allergiesInput');
+            const notes = document.getElementById('medicalNotesInput');
+            const home = document.getElementById('checklistHomeAddress');
+            const voice = document.getElementById('checklistVoiceEvidence');
+            const contactsWrap = document.getElementById('checklistContacts');
+
+            if (blood) blood.value = profileData.blood_group || '';
+            if (allergies) allergies.value = profileData.allergies || '';
+            if (notes) notes.value = profileData.medical_notes || '';
+            if (home) home.textContent = profileData.home_address || 'Not set yet';
+            if (voice) {
+                voice.innerHTML = profileData.latest_voice_note_url
+                    ? `<a href="${profileData.latest_voice_note_url}" target="_blank">Open latest voice evidence</a>`
+                    : 'No voice evidence saved yet.';
+            }
+
+            if (contactsWrap && Array.isArray(contacts)) {
+                contactsWrap.innerHTML = contacts.length
+                    ? contacts.map(contact => `<div class="small mb-2"><strong>${contact.name}</strong> • ${contact.relationship || 'Contact'} • ${contact.phone}</div>`).join('')
+                    : '<div class="small text-muted">No emergency contacts added yet.</div>';
+            }
+        }
+
+        function saveChecklist() {
+            fetch('/api/update_user_profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    blood_group: document.getElementById('bloodGroupInput').value.trim(),
+                    allergies: document.getElementById('allergiesInput').value.trim(),
+                    medical_notes: document.getElementById('medicalNotesInput').value.trim()
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Could not save checklist.');
+                    }
+
+                    alert('Emergency checklist updated.');
+                    refreshProfileStats();
+                })
+                .catch(error => alert(error.message || 'Could not save checklist.'));
+        }
+
+        function openAlertStatusModal() {
+            loadDashboardData();
+            new bootstrap.Modal(document.getElementById('alertStatusModal')).show();
+        }
+
+        function renderAlertStatus(profileData) {
+            const heading = document.getElementById('latestAlertHeading');
+            const meta = document.getElementById('latestAlertMeta');
+            const sentSummary = document.getElementById('alertSentSummary');
+            const sentList = document.getElementById('alertSentList');
+            const failedSummary = document.getElementById('alertFailedSummary');
+            const failedList = document.getElementById('alertFailedList');
+            if (!heading || !meta || !sentSummary || !sentList || !failedSummary || !failedList) {
+                return;
+            }
+
+            if (!profileData || !profileData.latest_alert) {
+                heading.textContent = 'No alert has been sent yet.';
+                meta.textContent = 'The next SOS or timed alert will appear here.';
+                sentSummary.textContent = '0 contacts';
+                sentList.textContent = 'No successful deliveries yet.';
+                failedSummary.textContent = '0 contacts';
+                failedList.textContent = 'No failures logged.';
+                return;
+            }
+
+            const alertData = profileData.latest_alert;
+            heading.textContent = `${(profileData.latest_alert_type || 'alert').replace(/_/g, ' ')} updated`;
+            meta.textContent = profileData.latest_alert_time
+                ? `Last sent at ${new Date(profileData.latest_alert_time + 'Z').toLocaleString()}`
+                : 'Recent alert status';
+            sentSummary.textContent = `${alertData.sent_count || 0} contact(s)`;
+            failedSummary.textContent = `${alertData.failed_count || 0} contact(s)`;
+            sentList.innerHTML = alertData.sent_messages && alertData.sent_messages.length
+                ? alertData.sent_messages.map(item => `<div class="mb-2"><strong>${item.name}</strong><div class="text-muted">${item.phone}</div></div>`).join('')
+                : 'No successful deliveries yet.';
+            failedList.innerHTML = alertData.failed_messages && alertData.failed_messages.length
+                ? alertData.failed_messages.map(item => `<div class="mb-2"><strong>${item.name}</strong><div class="text-muted">${item.error}</div></div>`).join('')
+                : 'No failures logged.';
         }
 
         function showFakeCall() {

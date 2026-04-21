@@ -13,6 +13,8 @@ import time
 from config import Config
 from sqlalchemy import inspect, text
 from zoneinfo import ZoneInfo
+from werkzeug.utils import secure_filename
+import uuid
 
 # Load local environment variables without overriding real platform env vars.
 load_dotenv()
@@ -52,6 +54,14 @@ class User(UserMixin, db.Model):
     journey_started_at = db.Column(db.DateTime)
     journey_last_lat = db.Column(db.Float)
     journey_last_lng = db.Column(db.Float)
+    blood_group = db.Column(db.String(10))
+    allergies = db.Column(db.String(200))
+    medical_notes = db.Column(db.String(300))
+    latest_voice_note_url = db.Column(db.String(300))
+    latest_voice_note_at = db.Column(db.DateTime)
+    latest_alert_type = db.Column(db.String(50))
+    latest_alert_time = db.Column(db.DateTime)
+    latest_alert_payload = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def set_password(self, password):
@@ -176,7 +186,15 @@ def ensure_runtime_columns(app):
         'journey_deadline': 'ALTER TABLE "user" ADD COLUMN journey_deadline TIMESTAMP',
         'journey_started_at': 'ALTER TABLE "user" ADD COLUMN journey_started_at TIMESTAMP',
         'journey_last_lat': 'ALTER TABLE "user" ADD COLUMN journey_last_lat DOUBLE PRECISION',
-        'journey_last_lng': 'ALTER TABLE "user" ADD COLUMN journey_last_lng DOUBLE PRECISION'
+        'journey_last_lng': 'ALTER TABLE "user" ADD COLUMN journey_last_lng DOUBLE PRECISION',
+        'blood_group': 'ALTER TABLE "user" ADD COLUMN blood_group VARCHAR(10)',
+        'allergies': 'ALTER TABLE "user" ADD COLUMN allergies VARCHAR(200)',
+        'medical_notes': 'ALTER TABLE "user" ADD COLUMN medical_notes VARCHAR(300)',
+        'latest_voice_note_url': 'ALTER TABLE "user" ADD COLUMN latest_voice_note_url VARCHAR(300)',
+        'latest_voice_note_at': 'ALTER TABLE "user" ADD COLUMN latest_voice_note_at TIMESTAMP',
+        'latest_alert_type': 'ALTER TABLE "user" ADD COLUMN latest_alert_type VARCHAR(50)',
+        'latest_alert_time': 'ALTER TABLE "user" ADD COLUMN latest_alert_time TIMESTAMP',
+        'latest_alert_payload': 'ALTER TABLE "user" ADD COLUMN latest_alert_payload TEXT'
     }
 
     with app.app_context():
@@ -233,6 +251,24 @@ def send_whatsapp_messages(contacts, message_body):
     }
 
 
+def get_voice_evidence_line(user):
+    if not user.latest_voice_note_url:
+        return None
+    return f"Voice evidence:\n{user.latest_voice_note_url}"
+
+
+def store_latest_alert(user, alert_type, result):
+    user.latest_alert_type = alert_type
+    user.latest_alert_time = datetime.utcnow()
+    user.latest_alert_payload = json.dumps({
+        'status': result.get('status'),
+        'sent_count': result.get('sent_count', 0),
+        'failed_count': result.get('failed_count', 0),
+        'sent_messages': result.get('sent_messages', []),
+        'failed_messages': result.get('failed_messages', [])
+    })
+
+
 def build_location_link(location_data):
     lat = location_data.get('lat')
     lng = location_data.get('lng')
@@ -252,6 +288,7 @@ def send_check_in_missed_alert(user):
     })
     location_line = maps_link or 'Home location not available in profile yet.'
     note_line = user.check_in_note or 'No destination note shared.'
+    evidence_line = get_voice_evidence_line(user)
 
     message_body = f"""Safety Check-In Alert - Aran App
 
@@ -268,6 +305,9 @@ Time: {format_local_timestamp()}
 
 Please contact them immediately and verify they are safe."""
 
+    if evidence_line:
+        message_body += f"\n\n{evidence_line}"
+
     return send_whatsapp_messages(contacts, message_body)
 
 
@@ -281,6 +321,7 @@ def send_journey_started_alert(user):
         'lng': user.journey_last_lng
     })
     location_line = maps_link or 'Live location unavailable.'
+    evidence_line = get_voice_evidence_line(user)
 
     message_body = f"""Journey Started - Aran App
 
@@ -300,6 +341,9 @@ Time: {format_local_timestamp()}
 
 You will be notified if they do not mark the journey as completed safely."""
 
+    if evidence_line:
+        message_body += f"\n\n{evidence_line}"
+
     return send_whatsapp_messages(contacts, message_body)
 
 
@@ -313,6 +357,7 @@ def send_journey_missed_alert(user):
         'lng': user.journey_last_lng or user.home_lng
     })
     location_line = maps_link or 'Last known location unavailable.'
+    evidence_line = get_voice_evidence_line(user)
 
     message_body = f"""Journey Alert - Aran App
 
@@ -328,6 +373,9 @@ Phone: {user.phone}
 Time: {format_local_timestamp()}
 
 Please contact them immediately and verify they have arrived safely."""
+
+    if evidence_line:
+        message_body += f"\n\n{evidence_line}"
 
     return send_whatsapp_messages(contacts, message_body)
 
@@ -345,6 +393,7 @@ def send_whatsapp_alert(user, contacts, location_data):
         # CORRECT Google Maps URL formats that work properly:
         maps_link = f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
         # Alternative: maps_link = f"https://maps.google.com/?q={lat},{lng}&z=15"
+        evidence_line = get_voice_evidence_line(user)
         
         message_body = f"""🚨 EMERGENCY ALERT - Aran App 🚨
 
@@ -364,6 +413,9 @@ def send_whatsapp_alert(user, contacts, location_data):
 • Women Helpline: 1091
 
 Please check on them immediately and provide assistance!"""
+
+        if evidence_line:
+            message_body += f"\n\n{evidence_line}"
 
         sent_messages = []
         failed_messages = []
@@ -655,6 +707,7 @@ Please click the link above and confirm it opens at Chennai coordinates."""
             print(f"📍 Location: {location_data['lat']}, {location_data['lng']}")
             
             result = send_whatsapp_alert(current_user, contacts, location_data)
+            store_latest_alert(current_user, 'sos', result)
             db.session.commit()
             
             return jsonify({
@@ -685,6 +738,8 @@ Please click the link above and confirm it opens at Chennai coordinates."""
             }
             
             result = send_whatsapp_alert(current_user, contacts, test_location)
+            store_latest_alert(current_user, 'test_whatsapp', result)
+            db.session.commit()
             
             if result['status'] == 'success':
                 return jsonify({
@@ -792,6 +847,7 @@ Please click the link above and confirm it opens at Chennai coordinates."""
     @login_required
     def get_user_profile():
         try:
+            latest_alert = json.loads(current_user.latest_alert_payload) if current_user.latest_alert_payload else None
             return jsonify({
                 'name': current_user.name,
                 'phone': current_user.phone,
@@ -803,6 +859,14 @@ Please click the link above and confirm it opens at Chennai coordinates."""
                 'journey_active': current_user.journey_active or False,
                 'journey_destination': current_user.journey_destination,
                 'journey_deadline': current_user.journey_deadline.isoformat() if current_user.journey_deadline else None,
+                'blood_group': current_user.blood_group,
+                'allergies': current_user.allergies,
+                'medical_notes': current_user.medical_notes,
+                'latest_voice_note_url': current_user.latest_voice_note_url,
+                'latest_voice_note_at': current_user.latest_voice_note_at.isoformat() if current_user.latest_voice_note_at else None,
+                'latest_alert_type': current_user.latest_alert_type,
+                'latest_alert_time': current_user.latest_alert_time.isoformat() if current_user.latest_alert_time else None,
+                'latest_alert': latest_alert,
                 'member_since': current_user.created_at.strftime('%B %Y') if current_user.created_at else 'Unknown'
             })
         except Exception as e:
@@ -831,6 +895,15 @@ Please click the link above and confirm it opens at Chennai coordinates."""
                     return jsonify({'status': 'error', 'message': 'Phone number already registered!'})
                 
                 current_user.phone = formatted_phone
+
+            if 'blood_group' in data:
+                current_user.blood_group = (data.get('blood_group') or '').strip()[:10] or None
+
+            if 'allergies' in data:
+                current_user.allergies = (data.get('allergies') or '').strip()[:200] or None
+
+            if 'medical_notes' in data:
+                current_user.medical_notes = (data.get('medical_notes') or '').strip()[:300] or None
             
             db.session.commit()
             
@@ -863,6 +936,38 @@ Please click the link above and confirm it opens at Chennai coordinates."""
             current_user.location_share_count = (current_user.location_share_count or 0) + 1
             db.session.commit()
             return jsonify({'status': 'success'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+
+    @app.route('/api/upload_voice_evidence', methods=['POST'])
+    @login_required
+    def upload_voice_evidence():
+        try:
+            if 'audio' not in request.files:
+                return jsonify({'status': 'error', 'message': 'Audio file is required.'})
+
+            audio_file = request.files['audio']
+            if not audio_file.filename:
+                return jsonify({'status': 'error', 'message': 'Audio file is missing.'})
+
+            extension = os.path.splitext(secure_filename(audio_file.filename))[1] or '.webm'
+            voice_dir = os.path.join(app.static_folder, 'uploads', 'voice_notes')
+            os.makedirs(voice_dir, exist_ok=True)
+            filename = f"user_{current_user.id}_{uuid.uuid4().hex}{extension}"
+            file_path = os.path.join(voice_dir, filename)
+            audio_file.save(file_path)
+
+            current_user.latest_voice_note_url = url_for('static', filename=f'uploads/voice_notes/{filename}', _external=True)
+            current_user.latest_voice_note_at = datetime.utcnow()
+            db.session.commit()
+
+            return jsonify({
+                'status': 'success',
+                'message': 'Voice evidence saved.',
+                'voice_note_url': current_user.latest_voice_note_url,
+                'saved_at': current_user.latest_voice_note_at.isoformat()
+            })
         except Exception as e:
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)})
@@ -942,6 +1047,7 @@ Please click the link above and confirm it opens at Chennai coordinates."""
                 })
 
             alert_result = send_check_in_missed_alert(current_user)
+            store_latest_alert(current_user, 'check_in_timeout', alert_result)
             current_user.check_in_active = False
             current_user.check_in_deadline = None
             current_user.check_in_note = None
@@ -1008,6 +1114,8 @@ Please click the link above and confirm it opens at Chennai coordinates."""
             db.session.commit()
 
             alert_result = send_journey_started_alert(current_user)
+            store_latest_alert(current_user, 'journey_started', alert_result)
+            db.session.commit()
 
             return jsonify({
                 'status': 'success',
@@ -1063,6 +1171,7 @@ Please click the link above and confirm it opens at Chennai coordinates."""
                 })
 
             alert_result = send_journey_missed_alert(current_user)
+            store_latest_alert(current_user, 'journey_timeout', alert_result)
             current_user.journey_active = False
             current_user.journey_destination = None
             current_user.journey_deadline = None

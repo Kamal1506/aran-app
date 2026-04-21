@@ -41,6 +41,11 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.25);
     }
 
+    .navbar-toggler {
+        border: none;
+        box-shadow: none !important;
+    }
+
     .brand-title {
         font-family: 'Poppins', sans-serif;
         font-weight: 700;
@@ -205,35 +210,40 @@
             <a class="navbar-brand brand-title" href="{{ url_for('home') }}">
                 <i class="fas fa-shield-alt"></i> ARAN
             </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#routeNav"
+                aria-controls="routeNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-            <div class="navbar-nav ms-auto align-items-center">
-                <a class="nav-link nav-link-custom me-3" href="{{ url_for('home') }}">
-                    <i class="fas fa-home me-1"></i> Dashboard
-                </a>
-                <a class="nav-link nav-link-custom me-3" href="{{ url_for('profile') }}">
-                    <i class="fas fa-user-circle me-1"></i> My Profile
-                </a>
-                <a class="nav-link nav-link-custom me-3" href="{{ url_for('whatsapp_setup') }}">
-                    <i class="fab fa-whatsapp me-1"></i> WhatsApp Setup
-                </a>
-
-                <!-- Settings Dropdown -->
-                <div class="dropdown">
-                    <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <i class="fas fa-cog me-1"></i> Settings
+            <div class="collapse navbar-collapse" id="routeNav">
+                <div class="navbar-nav ms-auto align-items-lg-center">
+                    <a class="nav-link nav-link-custom me-lg-3" href="{{ url_for('home') }}">
+                        <i class="fas fa-home me-1"></i> Dashboard
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('settings') }}">
-                                <i class="fas fa-info-circle me-2"></i> About App
-                            </a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                                <i class="fas fa-sign-out-alt me-2"></i> Logout
-                            </a></li>
-                    </ul>
+                    <a class="nav-link nav-link-custom me-lg-3" href="{{ url_for('profile') }}">
+                        <i class="fas fa-user-circle me-1"></i> My Profile
+                    </a>
+                    <a class="nav-link nav-link-custom me-lg-3" href="{{ url_for('whatsapp_setup') }}">
+                        <i class="fab fa-whatsapp me-1"></i> WhatsApp Setup
+                    </a>
+
+                    <div class="dropdown">
+                        <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fas fa-cog me-1"></i> Settings
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('settings') }}">
+                                    <i class="fas fa-info-circle me-2"></i> About App
+                                </a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                </a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
