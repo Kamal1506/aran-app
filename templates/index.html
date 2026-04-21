@@ -150,9 +150,10 @@
             background: var(--red-1);
             border-radius: 15px;
             padding: 1.5rem;
-            text-align: center;
+            text-align: left;
             border-left: 4px solid var(--red-3);
             transition: all 0.3s ease;
+            height: 100%;
         }
 
         .emergency-contact:hover {
@@ -163,6 +164,25 @@
         .contact-icon {
             font-size: 2.2rem;
             margin-bottom: 1rem;
+        }
+
+        .contact-number {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.15rem;
+            color: var(--red-4);
+            margin-bottom: 0.6rem;
+        }
+
+        .contact-description {
+            color: #4f4f4f;
+            font-size: 0.95rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .contact-use {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0;
         }
 
         .user-welcome {
@@ -630,34 +650,58 @@
                     </div>
                     <div class="card-body p-4">
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 col-xl-4 mb-3">
                                 <div class="emergency-contact">
                                     <div class="contact-icon text-danger"><i class="fas fa-police-box"></i></div>
                                     <h5>Police</h5>
-                                    <p class="mb-2">Emergency: <strong>100</strong></p>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="callNumber('100')">
-                                        <i class="fas fa-phone me-1"></i> Call
-                                    </button>
+                                    <p class="contact-number">Helpline: <strong>100</strong></p>
+                                    <p class="contact-description">Connects you to police support for threats, harassment, stalking, assault, or unsafe situations.</p>
+                                    <p class="contact-use">Best for: Immediate law enforcement help and rapid local response.</p>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 col-xl-4 mb-3">
                                 <div class="emergency-contact">
                                     <div class="contact-icon text-primary"><i class="fas fa-ambulance"></i></div>
                                     <h5>Ambulance</h5>
-                                    <p class="mb-2">Emergency: <strong>108</strong></p>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="callNumber('108')">
-                                        <i class="fas fa-phone me-1"></i> Call
-                                    </button>
+                                    <p class="contact-number">Helpline: <strong>108</strong></p>
+                                    <p class="contact-description">Used for urgent medical emergencies such as injuries, fainting, severe pain, or accidents.</p>
+                                    <p class="contact-use">Best for: Fast medical transport and emergency health assistance.</p>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 col-xl-4 mb-3">
                                 <div class="emergency-contact">
                                     <div class="contact-icon text-success"><i class="fas fa-helmet-safety"></i></div>
                                     <h5>Women Helpline</h5>
-                                    <p class="mb-2">Emergency: <strong>1091</strong></p>
-                                    <button class="btn btn-sm btn-outline-success" onclick="callNumber('1091')">
-                                        <i class="fas fa-phone me-1"></i> Call
-                                    </button>
+                                    <p class="contact-number">Helpline: <strong>181 / 1091</strong></p>
+                                    <p class="contact-description">Supports women facing violence, abuse, intimidation, or needing guidance and coordinated assistance.</p>
+                                    <p class="contact-use">Best for: Safety support, counselling, referrals, and women-focused emergency help.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-4 mb-3">
+                                <div class="emergency-contact">
+                                    <div class="contact-icon text-warning"><i class="fas fa-phone-volume"></i></div>
+                                    <h5>Emergency Response</h5>
+                                    <p class="contact-number">Helpline: <strong>112</strong></p>
+                                    <p class="contact-description">A single emergency number that can route urgent requests for police, medical, fire, and rescue support.</p>
+                                    <p class="contact-use">Best for: One-number emergency help when you need the fastest coordination.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-4 mb-3">
+                                <div class="emergency-contact">
+                                    <div class="contact-icon" style="color:#9b2fae;"><i class="fas fa-shield-halved"></i></div>
+                                    <h5>Cyber Crime</h5>
+                                    <p class="contact-number">Helpline: <strong>1930</strong></p>
+                                    <p class="contact-description">For online fraud, scam payments, suspicious account activity, blackmail, or digital safety complaints.</p>
+                                    <p class="contact-use">Best for: Reporting cyber fraud quickly to improve the chance of stopping losses.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-4 mb-3">
+                                <div class="emergency-contact">
+                                    <div class="contact-icon" style="color:#ff7a00;"><i class="fas fa-child-reaching"></i></div>
+                                    <h5>Child Helpline</h5>
+                                    <p class="contact-number">Helpline: <strong>1098</strong></p>
+                                    <p class="contact-description">Provides support for children in danger, abuse, neglect, trafficking, or urgent shelter needs.</p>
+                                    <p class="contact-use">Best for: Immediate intervention and protection for children at risk.</p>
                                 </div>
                             </div>
                         </div>
@@ -1099,10 +1143,6 @@
 
         function safetyTips() {
             alert('Important Safety Tips:\n\n- Always share your live location with trusted contacts\n- Use well-lit and populated routes\n- Keep emergency numbers handy\n- Trust your instincts\n- Avoid isolated areas at night\n- Keep your phone charged');
-        }
-
-        function callNumber(number) {
-            alert(`Calling ${number}...\n\nIn a real mobile app, this would automatically dial the emergency number.`);
         }
 
         function openCheckInModal() {

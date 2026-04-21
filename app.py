@@ -508,12 +508,17 @@ def create_app():
             return redirect(url_for('home'))
             
         if request.method == 'POST':
-            phone = ''.join(filter(str.isdigit, request.form['phone']))
-            password = request.form['password']
+            form_data = request.form if request.form else (request.get_json(silent=True) or {})
+            phone = ''.join(filter(str.isdigit, (form_data.get('phone') or '')))
+            password = form_data.get('password') or ''
+
+            if not phone or not password:
+                flash('Phone and password are required!', 'error')
+                return render_template('login.html'), 400
             
             if len(phone) != 10:
                 flash('Phone must be 10 digits!', 'error')
-                return render_template('login.html')
+                return render_template('login.html'), 400
             
             try:
                 user = User.query.filter_by(phone='+91' + phone).first()
@@ -536,16 +541,21 @@ def create_app():
             return redirect(url_for('home'))
             
         if request.method == 'POST':
-            name = request.form['name']
-            phone = ''.join(filter(str.isdigit, request.form['phone']))
-            password = request.form['password']
-            contact_name = request.form['trusted_contact_name']
-            contact_phone = ''.join(filter(str.isdigit, request.form['trusted_contact_phone']))
-            contact_relationship = request.form['trusted_contact_relationship']
+            form_data = request.form if request.form else (request.get_json(silent=True) or {})
+            name = (form_data.get('name') or '').strip()
+            phone = ''.join(filter(str.isdigit, (form_data.get('phone') or '')))
+            password = form_data.get('password') or ''
+            contact_name = (form_data.get('trusted_contact_name') or '').strip()
+            contact_phone = ''.join(filter(str.isdigit, (form_data.get('trusted_contact_phone') or '')))
+            contact_relationship = (form_data.get('trusted_contact_relationship') or '').strip()
+
+            if not all([name, phone, password, contact_name, contact_phone, contact_relationship]):
+                flash('Please fill in all required fields!', 'error')
+                return render_template('register.html'), 400
             
             if len(phone) != 10 or len(contact_phone) != 10:
                 flash('Phone numbers must be 10 digits!', 'error')
-                return render_template('register.html')
+                return render_template('register.html'), 400
             
             user_phone = '+91' + phone
             contact_phone_formatted = '+91' + contact_phone
@@ -1408,8 +1418,9 @@ Please click the link above and confirm it opens at Chennai coordinates."""
     
     return app
 
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
 
     print("🚀 Aran Women Safety App Started Successfully!")
     print("📧 Register: http://localhost:5000/register")
