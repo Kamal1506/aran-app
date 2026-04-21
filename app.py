@@ -1,4 +1,4 @@
-from flask import Flask, app, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, app, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -83,7 +83,17 @@ class EmergencyContact(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except SQLAlchemyError as exc:
+        # If the database is temporarily unreachable, clear the stale login state
+        # so public pages can still render instead of failing with a 500.
+        print(f"User session lookup failed: {exc}")
+        db.session.remove()
+        session.pop('_user_id', None)
+        session.pop('_fresh', None)
+        session.pop('_id', None)
+        return None
 
 # Google Maps API
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')

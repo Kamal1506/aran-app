@@ -40,9 +40,9 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_recycle': 300,
         'pool_pre_ping': True,
-        'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', '15')),
+        'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', '5')),
         'connect_args': {
-            'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', '10'))
+            'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', '3'))
         }
     }
     AUTO_DB_BOOTSTRAP = _is_auto_db_bootstrap_enabled()
