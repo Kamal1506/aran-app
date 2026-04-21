@@ -15,6 +15,7 @@ from sqlalchemy import inspect, text
 from zoneinfo import ZoneInfo
 from werkzeug.utils import secure_filename
 import uuid
+from sqlalchemy.exc import SQLAlchemyError
 
 # Load local environment variables without overriding real platform env vars.
 load_dotenv()
@@ -480,16 +481,38 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    print("DATABASE_URL =", os.getenv("DATABASE_URL"))
+    db_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if db_url:
+        try:
+            parts = urllib.parse.urlsplit(db_url)
+            masked_netloc = parts.hostname or ''
+            if parts.port:
+                masked_netloc += f":{parts.port}"
+            safe_db_url = urllib.parse.urlunsplit((
+                parts.scheme,
+                masked_netloc,
+                parts.path,
+                parts.query,
+                parts.fragment
+            ))
+            print("DATABASE_URL =", safe_db_url)
+        except Exception:
+            print("DATABASE_URL configured")
 
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'login'
 
-    with app.app_context():
-        db.create_all()
-        ensure_runtime_columns(app)
-        print("Database tables ensured")
+    if app.config.get('AUTO_DB_BOOTSTRAP'):
+        with app.app_context():
+            try:
+                db.create_all()
+                ensure_runtime_columns(app)
+                print("Database tables ensured")
+            except SQLAlchemyError as exc:
+                print(f"Database bootstrap skipped: {exc}")
+    else:
+        print("Automatic database bootstrap disabled")
 
 
     @app.teardown_appcontext

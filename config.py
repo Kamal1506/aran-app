@@ -1,4 +1,5 @@
 import os
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,7 +14,24 @@ def _get_database_url():
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
+    if database_url.startswith('postgresql://') or database_url.startswith('postgresql+psycopg2://'):
+        parts = urlsplit(database_url)
+        query = dict(parse_qsl(parts.query, keep_blank_values=True))
+        query.setdefault('sslmode', os.getenv('DB_SSLMODE', 'require'))
+        database_url = urlunsplit((
+            parts.scheme,
+            parts.netloc,
+            parts.path,
+            urlencode(query),
+            parts.fragment
+        ))
+
     return database_url
+
+
+def _is_auto_db_bootstrap_enabled():
+    default_value = 'true' if os.getenv('FLASK_ENV', 'development').lower() == 'development' else 'false'
+    return os.getenv('AUTO_DB_BOOTSTRAP', default_value).lower() == 'true'
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'fallback_secret_key_change_in_production')
@@ -21,8 +39,13 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_recycle': 300,
-        'pool_pre_ping': True
+        'pool_pre_ping': True,
+        'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', '15')),
+        'connect_args': {
+            'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', '10'))
+        }
     }
+    AUTO_DB_BOOTSTRAP = _is_auto_db_bootstrap_enabled()
 
     # Twilio Configuration
     TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
