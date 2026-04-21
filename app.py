@@ -46,6 +46,12 @@ class User(UserMixin, db.Model):
     check_in_active = db.Column(db.Boolean, default=False)
     check_in_deadline = db.Column(db.DateTime)
     check_in_note = db.Column(db.String(200))
+    journey_active = db.Column(db.Boolean, default=False)
+    journey_destination = db.Column(db.String(200))
+    journey_deadline = db.Column(db.DateTime)
+    journey_started_at = db.Column(db.DateTime)
+    journey_last_lat = db.Column(db.Float)
+    journey_last_lng = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def set_password(self, password):
@@ -164,7 +170,13 @@ def ensure_runtime_columns(app):
     required_columns = {
         'check_in_active': 'ALTER TABLE "user" ADD COLUMN check_in_active BOOLEAN DEFAULT FALSE',
         'check_in_deadline': 'ALTER TABLE "user" ADD COLUMN check_in_deadline TIMESTAMP',
-        'check_in_note': 'ALTER TABLE "user" ADD COLUMN check_in_note VARCHAR(200)'
+        'check_in_note': 'ALTER TABLE "user" ADD COLUMN check_in_note VARCHAR(200)',
+        'journey_active': 'ALTER TABLE "user" ADD COLUMN journey_active BOOLEAN DEFAULT FALSE',
+        'journey_destination': 'ALTER TABLE "user" ADD COLUMN journey_destination VARCHAR(200)',
+        'journey_deadline': 'ALTER TABLE "user" ADD COLUMN journey_deadline TIMESTAMP',
+        'journey_started_at': 'ALTER TABLE "user" ADD COLUMN journey_started_at TIMESTAMP',
+        'journey_last_lat': 'ALTER TABLE "user" ADD COLUMN journey_last_lat DOUBLE PRECISION',
+        'journey_last_lng': 'ALTER TABLE "user" ADD COLUMN journey_last_lng DOUBLE PRECISION'
     }
 
     with app.app_context():
@@ -255,6 +267,67 @@ Phone: {user.phone}
 Time: {format_local_timestamp()}
 
 Please contact them immediately and verify they are safe."""
+
+    return send_whatsapp_messages(contacts, message_body)
+
+
+def send_journey_started_alert(user):
+    contacts = EmergencyContact.query.filter_by(user_id=user.id).all()
+    if not contacts:
+        return {'status': 'error', 'message': 'No emergency contacts configured'}
+
+    maps_link = build_location_link({
+        'lat': user.journey_last_lat,
+        'lng': user.journey_last_lng
+    })
+    location_line = maps_link or 'Live location unavailable.'
+
+    message_body = f"""Journey Started - Aran App
+
+{user.name} has started a shared journey.
+
+Destination:
+{user.journey_destination or 'Destination not provided'}
+
+Expected arrival:
+{user.journey_deadline.astimezone(APP_TIMEZONE).strftime('%Y-%m-%d %I:%M %p') if user.journey_deadline else 'Not set'}
+
+Starting location:
+{location_line}
+
+Phone: {user.phone}
+Time: {format_local_timestamp()}
+
+You will be notified if they do not mark the journey as completed safely."""
+
+    return send_whatsapp_messages(contacts, message_body)
+
+
+def send_journey_missed_alert(user):
+    contacts = EmergencyContact.query.filter_by(user_id=user.id).all()
+    if not contacts:
+        return {'status': 'error', 'message': 'No emergency contacts configured'}
+
+    maps_link = build_location_link({
+        'lat': user.journey_last_lat or user.home_lat,
+        'lng': user.journey_last_lng or user.home_lng
+    })
+    location_line = maps_link or 'Last known location unavailable.'
+
+    message_body = f"""Journey Alert - Aran App
+
+{user.name} has not confirmed safe arrival for their journey.
+
+Destination:
+{user.journey_destination or 'Destination not provided'}
+
+Last known location:
+{location_line}
+
+Phone: {user.phone}
+Time: {format_local_timestamp()}
+
+Please contact them immediately and verify they have arrived safely."""
 
     return send_whatsapp_messages(contacts, message_body)
 
@@ -727,6 +800,9 @@ Please click the link above and confirm it opens at Chennai coordinates."""
                 'home_lng': current_user.home_lng,
                 'sos_count': current_user.sos_count or 0,
                 'location_share_count': current_user.location_share_count or 0,
+                'journey_active': current_user.journey_active or False,
+                'journey_destination': current_user.journey_destination,
+                'journey_deadline': current_user.journey_deadline.isoformat() if current_user.journey_deadline else None,
                 'member_since': current_user.created_at.strftime('%B %Y') if current_user.created_at else 'Unknown'
             })
         except Exception as e:
@@ -881,6 +957,130 @@ Please click the link above and confirm it opens at Chennai coordinates."""
             return jsonify({
                 'status': 'success',
                 'message': 'Missed check-in alerts sent to trusted contacts.',
+                'result': alert_result
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+
+    @app.route('/api/journey_status')
+    @login_required
+    def journey_status():
+        deadline = current_user.journey_deadline
+        active = bool(current_user.journey_active and deadline)
+        remaining_seconds = None
+
+        if active:
+            remaining_seconds = int((deadline - datetime.utcnow()).total_seconds())
+            if remaining_seconds <= 0:
+                remaining_seconds = 0
+
+        return jsonify({
+            'status': 'success',
+            'active': active,
+            'destination': current_user.journey_destination,
+            'deadline': deadline.isoformat() if deadline else None,
+            'remaining_seconds': remaining_seconds
+        })
+
+    @app.route('/api/start_journey_sharing', methods=['POST'])
+    @login_required
+    def start_journey_sharing():
+        try:
+            data = request.get_json() or {}
+            destination = (data.get('destination') or '').strip()
+            minutes = int(data.get('minutes', 0))
+            lat = data.get('lat')
+            lng = data.get('lng')
+
+            if not destination:
+                return jsonify({'status': 'error', 'message': 'Destination is required.'})
+
+            if minutes < 5 or minutes > 300:
+                return jsonify({'status': 'error', 'message': 'Journey timer must be between 5 and 300 minutes.'})
+
+            current_user.journey_active = True
+            current_user.journey_destination = destination[:200]
+            current_user.journey_started_at = datetime.utcnow()
+            current_user.journey_deadline = datetime.utcnow() + timedelta(minutes=minutes)
+            current_user.journey_last_lat = lat
+            current_user.journey_last_lng = lng
+            db.session.commit()
+
+            alert_result = send_journey_started_alert(current_user)
+
+            return jsonify({
+                'status': 'success',
+                'message': 'Journey sharing started.',
+                'destination': current_user.journey_destination,
+                'deadline': current_user.journey_deadline.isoformat(),
+                'result': alert_result
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+
+    @app.route('/api/complete_journey', methods=['POST'])
+    @login_required
+    def complete_journey():
+        try:
+            current_user.journey_active = False
+            current_user.journey_destination = None
+            current_user.journey_deadline = None
+            current_user.journey_started_at = None
+            current_user.journey_last_lat = None
+            current_user.journey_last_lng = None
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Journey marked completed safely.'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+
+    @app.route('/api/journey_timeout', methods=['POST'])
+    @login_required
+    def journey_timeout():
+        try:
+            data = request.get_json() or {}
+            lat = data.get('lat')
+            lng = data.get('lng')
+
+            if lat is not None:
+                current_user.journey_last_lat = lat
+            if lng is not None:
+                current_user.journey_last_lng = lng
+
+            if not current_user.journey_active or not current_user.journey_deadline:
+                db.session.commit()
+                return jsonify({'status': 'success', 'message': 'No active journey.'})
+
+            if datetime.utcnow() < current_user.journey_deadline:
+                remaining = int((current_user.journey_deadline - datetime.utcnow()).total_seconds())
+                db.session.commit()
+                return jsonify({
+                    'status': 'pending',
+                    'message': 'Journey still active.',
+                    'remaining_seconds': remaining
+                })
+
+            alert_result = send_journey_missed_alert(current_user)
+            current_user.journey_active = False
+            current_user.journey_destination = None
+            current_user.journey_deadline = None
+            current_user.journey_started_at = None
+            current_user.journey_last_lat = None
+            current_user.journey_last_lng = None
+            db.session.commit()
+
+            if alert_result.get('status') != 'success':
+                return jsonify({
+                    'status': 'error',
+                    'message': alert_result.get('message', 'Could not send missed journey alerts.'),
+                    'result': alert_result
+                })
+
+            return jsonify({
+                'status': 'success',
+                'message': 'Journey timeout alerts sent to trusted contacts.',
                 'result': alert_result
             })
         except Exception as e:

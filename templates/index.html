@@ -269,6 +269,23 @@
             flex-wrap: wrap;
         }
 
+        .journey-banner {
+            display: none;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .journey-banner.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
         .checkin-countdown {
             font-family: 'Poppins', sans-serif;
             font-size: 1.35rem;
@@ -406,6 +423,14 @@
                 <div class="checkin-countdown" id="checkinCountdown">00:00</div>
                 <button class="btn btn-light btn-sm" onclick="confirmCheckIn()">I'm Safe</button>
             </div>
+            <div class="journey-banner" id="journeyBanner">
+                <div>
+                    <div class="fw-semibold">Journey Sharing Active</div>
+                    <div class="small opacity-75" id="journeyDestinationText">Trusted contacts are watching this journey.</div>
+                </div>
+                <div class="checkin-countdown" id="journeyCountdown">00:00</div>
+                <button class="btn btn-light btn-sm" onclick="completeJourney()">Reached Safely</button>
+            </div>
         </div>
 
         <div class="dashboard-card">
@@ -457,6 +482,15 @@
                         </a>
                     </div>
                     <div class="col-lg-3 col-md-6 col-6 mb-3">
+                        <a class="quick-action" onclick="openJourneyModal()">
+                            <div class="action-icon"><i class="fas fa-person-walking"></i></div>
+                            <div class="action-text">
+                                <strong>Journey Sharing</strong>
+                                <p class="text-muted mb-0 small">Share trip and arrival status</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 col-6 mb-3">
                         <a class="quick-action" onclick="showFakeCall()">
                             <div class="action-icon"><i class="fas fa-phone-volume"></i></div>
                             <div class="action-text">
@@ -486,6 +520,17 @@
                                     <div class="small text-muted">Show a realistic incoming call, then jump into a neutral notes screen if you need to exit the page quickly.</div>
                                 </div>
                                 <button class="btn btn-outline-danger btn-sm" onclick="goToFocusMode()">Open Safe Screen</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-3">
+                        <div class="active-checkin-card">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                <div>
+                                    <div class="fw-semibold text-danger">Journey Sharing Mode</div>
+                                    <div class="small text-muted">Start a trip, share the destination with trusted contacts, and send an alert if you do not mark arrival safely.</div>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm" onclick="openJourneyModal()">Start Journey</button>
                             </div>
                         </div>
                     </div>
@@ -553,6 +598,10 @@
                         <div class="stats-card mb-3">
                             <div class="stat-number" id="timerStatus">Off</div>
                             <div class="stat-label">Check-In Timer</div>
+                        </div>
+                        <div class="stats-card mb-3">
+                            <div class="stat-number" id="journeyStatus">Off</div>
+                            <div class="stat-label">Journey Sharing</div>
                         </div>
                     </div>
                 </div>
@@ -643,10 +692,48 @@
         </div>
     </div>
 
+    <div class="modal fade" id="journeyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-person-walking me-2"></i>Start Journey Sharing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="journeyDestination" class="form-label">Destination</label>
+                        <input id="journeyDestination" class="form-control" placeholder="Going to Karur Bus Stand">
+                    </div>
+                    <div class="mb-3">
+                        <label for="journeyMinutes" class="form-label">Expected arrival time</label>
+                        <select id="journeyMinutes" class="form-select">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">60 minutes</option>
+                            <option value="90">90 minutes</option>
+                            <option value="120">120 minutes</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        ARAN will send a WhatsApp journey-started message now, and a follow-up alert if you do not tap <strong>Reached Safely</strong> before the timer ends.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="startJourneySharing()">Start Journey</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let checkInDeadlineMs = null;
         let checkInInterval = null;
         let timeoutTriggered = false;
+        let journeyDeadlineMs = null;
+        let journeyInterval = null;
+        let journeyTimeoutTriggered = false;
         let fakeCallModal = null;
         let fakeCallAudio = null;
 
@@ -663,7 +750,9 @@
                 .catch(error => console.error('Error loading user data:', error));
 
             loadCheckInStatus();
+            loadJourneyStatus();
             setInterval(loadCheckInStatus, 15000);
+            setInterval(loadJourneyStatus, 15000);
         });
 
         function triggerSOS() {
@@ -782,6 +871,10 @@
 
         function openCheckInModal() {
             new bootstrap.Modal(document.getElementById('checkInModal')).show();
+        }
+
+        function openJourneyModal() {
+            new bootstrap.Modal(document.getElementById('journeyModal')).show();
         }
 
         function startCheckInTimer() {
@@ -912,6 +1005,180 @@
                     timeoutTriggered = false;
                     alert('Check-in timer expired. Please verify whether alerts were sent.');
                 });
+        }
+
+        function startJourneySharing() {
+            const destination = document.getElementById('journeyDestination').value.trim();
+            const minutes = parseInt(document.getElementById('journeyMinutes').value, 10);
+
+            if (!destination) {
+                alert('Please enter a destination for this journey.');
+                return;
+            }
+
+            const submitJourney = (coords = {}) => {
+                fetch('/api/start_journey_sharing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        destination,
+                        minutes,
+                        lat: coords.lat,
+                        lng: coords.lng
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status !== 'success') {
+                            throw new Error(data.message || 'Could not start journey sharing.');
+                        }
+
+                        bootstrap.Modal.getInstance(document.getElementById('journeyModal')).hide();
+                        document.getElementById('journeyDestination').value = '';
+                        journeyTimeoutTriggered = false;
+                        applyJourneyState({
+                            active: true,
+                            destination: data.destination,
+                            deadline: data.deadline
+                        });
+                        alert('Journey sharing started. Trusted contacts have been notified.');
+                    })
+                    .catch(error => alert(error.message || 'Could not start journey sharing.'));
+            };
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => submitJourney({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    }),
+                    () => submitJourney({})
+                );
+            } else {
+                submitJourney({});
+            }
+        }
+
+        function loadJourneyStatus() {
+            fetch('/api/journey_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        applyJourneyState(data);
+                    }
+                })
+                .catch(error => console.error('Journey status error:', error));
+        }
+
+        function applyJourneyState(data) {
+            const banner = document.getElementById('journeyBanner');
+            const journeyStatus = document.getElementById('journeyStatus');
+            const destinationText = document.getElementById('journeyDestinationText');
+
+            if (data.active && data.deadline) {
+                banner.classList.add('active');
+                journeyStatus.textContent = 'On';
+                destinationText.textContent = data.destination
+                    ? `Destination: ${data.destination}`
+                    : 'Trusted contacts are watching this journey.';
+                journeyDeadlineMs = new Date(data.deadline + 'Z').getTime();
+                startJourneyCountdown();
+            } else {
+                banner.classList.remove('active');
+                journeyStatus.textContent = 'Off';
+                journeyDeadlineMs = null;
+                journeyTimeoutTriggered = false;
+                if (journeyInterval) {
+                    clearInterval(journeyInterval);
+                    journeyInterval = null;
+                }
+                document.getElementById('journeyCountdown').textContent = '00:00';
+            }
+        }
+
+        function startJourneyCountdown() {
+            if (journeyInterval) {
+                clearInterval(journeyInterval);
+            }
+
+            updateJourneyCountdown();
+            journeyInterval = setInterval(updateJourneyCountdown, 1000);
+        }
+
+        function updateJourneyCountdown() {
+            if (!journeyDeadlineMs) {
+                return;
+            }
+
+            const remainingMs = journeyDeadlineMs - Date.now();
+            const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+            const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+            const seconds = String(remainingSeconds % 60).padStart(2, '0');
+            document.getElementById('journeyCountdown').textContent = `${minutes}:${seconds}`;
+
+            if (remainingSeconds === 0 && !journeyTimeoutTriggered) {
+                journeyTimeoutTriggered = true;
+                handleJourneyTimeout();
+            }
+        }
+
+        function completeJourney() {
+            fetch('/api/complete_journey', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Could not mark journey complete.');
+                    }
+
+                    applyJourneyState({ active: false });
+                    alert('Journey marked complete. Glad you arrived safely.');
+                })
+                .catch(error => alert(error.message || 'Could not complete journey.'));
+        }
+
+        function handleJourneyTimeout() {
+            const sendTimeout = (coords = {}) => {
+                fetch('/api/journey_timeout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lat: coords.lat,
+                        lng: coords.lng
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            applyJourneyState({ active: false });
+                            alert('Journey time expired. Trusted contacts have been alerted.');
+                        } else if (data.status === 'pending') {
+                            journeyTimeoutTriggered = false;
+                            loadJourneyStatus();
+                        } else {
+                            journeyTimeoutTriggered = false;
+                            alert(data.message || 'Could not send journey timeout alerts.');
+                        }
+                    })
+                    .catch(() => {
+                        journeyTimeoutTriggered = false;
+                        alert('Journey time expired. Please verify whether alerts were sent.');
+                    });
+            };
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => sendTimeout({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    }),
+                    () => sendTimeout({})
+                );
+            } else {
+                sendTimeout({});
+            }
         }
 
         function showFakeCall() {
