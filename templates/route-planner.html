@@ -551,36 +551,79 @@
 
         async function searchDestinations(query) {
             try {
-                const response = await fetch(`/api/search_destination?q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-                if (data.status !== 'success') {
-                    throw new Error(data.message || 'Search failed');
-                }
-
-                suggestionItems = data.results || [];
+                suggestionItems = await fetchDestinationResults(query);
                 suggestionIndex = suggestionItems.length ? 0 : -1;
                 renderSuggestions(suggestionItems);
             } catch (error) {
                 suggestionItems = [];
-                hideSuggestions();
+                renderSuggestionMessage(
+                    'Search unavailable',
+                    error.message || 'Could not load destination suggestions right now.'
+                );
                 console.error('Destination lookup failed:', error);
             }
         }
 
+        async function fetchDestinationResults(query) {
+            const backendResponse = await fetch(`/api/search_destination?q=${encodeURIComponent(query)}`);
+            const backendData = await backendResponse.json();
+
+            if (backendData.status === 'success') {
+                return backendData.results || [];
+            }
+
+            console.warn('Backend destination lookup failed, trying browser fallback:', backendData.message);
+            return fetchDestinationResultsDirect(query);
+        }
+
+        async function fetchDestinationResultsDirect(query) {
+            const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=in&q=${encodeURIComponent(query)}`;
+            const response = await fetch(fallbackUrl, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Destination service is temporarily unavailable.');
+            }
+
+            const items = await response.json();
+            return items.map((item) => ({
+                name: (item.display_name || '').split(',')[0],
+                formatted_address: item.display_name,
+                place_id: item.place_id,
+                location: {
+                    lat: Number(item.lat),
+                    lng: Number(item.lon)
+                }
+            }));
+        }
+
         function renderSuggestions(results) {
-            const suggestionsBox = document.getElementById('destinationSuggestions');
             if (!results.length) {
-                suggestionsBox.innerHTML = '<div class="autocomplete-item"><strong>No matches found</strong><small>Try a longer place name or nearby landmark.</small></div>';
-                suggestionsBox.style.display = 'block';
+                renderSuggestionMessage('No matches found', 'Try a longer place name or nearby landmark.');
                 return;
             }
 
+            const suggestionsBox = document.getElementById('destinationSuggestions');
             suggestionsBox.innerHTML = results.map((item, index) => `
                 <div class="autocomplete-item ${index === suggestionIndex ? 'active' : ''}" onclick="selectDestinationByIndex(${index})">
                     <strong>${escapeHtml(item.name || item.formatted_address)}</strong>
                     <small>${escapeHtml(item.formatted_address)}</small>
                 </div>
             `).join('');
+            suggestionsBox.style.display = 'block';
+        }
+
+        function renderSuggestionMessage(title, message) {
+            const suggestionsBox = document.getElementById('destinationSuggestions');
+            suggestionsBox.innerHTML = `
+                <div class="autocomplete-item">
+                    <strong>${escapeHtml(title)}</strong>
+                    <small>${escapeHtml(message)}</small>
+                </div>
+            `;
             suggestionsBox.style.display = 'block';
         }
 
@@ -613,14 +656,13 @@
                 throw new Error('Please enter a destination.');
             }
 
-            const response = await fetch(`/api/search_destination?q=${encodeURIComponent(typedDestination)}`);
-            const data = await response.json();
-            if (data.status !== 'success' || !data.results || !data.results.length) {
+            const results = await fetchDestinationResults(typedDestination);
+            if (!results.length) {
                 throw new Error('Destination not found. Please choose from the dropdown suggestions.');
             }
 
-            selectDestination(data.results[0]);
-            return data.results[0];
+            selectDestination(results[0]);
+            return results[0];
         }
 
         function clearMarkers() {
