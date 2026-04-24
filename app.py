@@ -522,36 +522,39 @@ Please contact them immediately and verify they have arrived safely."""
 
 
 def send_whatsapp_alert(user, contacts, location_data):
-    """WhatsApp alert function with FIXED Google Maps links"""
+    """Send SOS alerts and tolerate missing GPS coordinates from mobile browsers."""
     if not twilio_client:
         return {'status': 'error', 'message': 'Twilio not configured'}
-    
+
     try:
-        # FIXED Google Maps link - using correct format
-        lat = location_data['lat']
-        lng = location_data['lng']
-        
-        # CORRECT Google Maps URL formats that work properly:
-        maps_link = f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
-        # Alternative: maps_link = f"https://maps.google.com/?q={lat},{lng}&z=15"
+        lat = location_data.get('lat')
+        lng = location_data.get('lng')
+        maps_link = build_location_link(location_data)
         evidence_line = get_voice_evidence_line(user)
-        
-        message_body = f"""🚨 EMERGENCY ALERT - Aran App 🚨
+
+        if maps_link:
+            location_line = maps_link
+            coordinates_line = f"{float(lat):.6f}, {float(lng):.6f}"
+        else:
+            location_line = location_data.get('address') or 'Live location unavailable. User may have denied GPS permission.'
+            coordinates_line = 'Unavailable'
+
+        message_body = f"""EMERGENCY ALERT - Aran App
 
 {user.name} needs immediate assistance!
 
-📍 *Live Location:* 
-{maps_link}
+Live Location:
+{location_line}
 
-📱 User Phone: {user.phone}
-🕒 Time: {format_local_timestamp()}
+User Phone: {user.phone}
+Time: {format_local_timestamp()}
 
-📊 Coordinates: {lat:.6f}, {lng:.6f}
+Coordinates: {coordinates_line}
 
-🚑 Emergency Contacts:
-• Police: 100
-• Ambulance: 108  
-• Women Helpline: 1091
+Emergency Contacts:
+- Police: 100
+- Ambulance: 108
+- Women Helpline: 1091
 
 Please check on them immediately and provide assistance!"""
 
@@ -560,61 +563,60 @@ Please check on them immediately and provide assistance!"""
 
         sent_messages = []
         failed_messages = []
-        
-        print(f"📱 Sending WhatsApp to {len(contacts)} contacts...")
-        print(f"📍 Location: {lat}, {lng}")
-        print(f"🗺️ Maps Link: {maps_link}")
-        
+
+        print(f"Sending WhatsApp to {len(contacts)} contacts...")
+        print(f"Location: {lat}, {lng}")
+        print(f"Maps Link: {maps_link or 'Unavailable'}")
+
         for contact in contacts:
             try:
-                # Clean phone number
                 phone_clean = contact.phone.replace('+', '').replace(' ', '')
                 if len(phone_clean) == 10:
                     phone_clean = '91' + phone_clean
-                
+
                 whatsapp_to = f"whatsapp:+{phone_clean}"
-                
-                print(f"➡️ Sending to {contact.name}: {whatsapp_to}")
-                
-                # Send message
+                print(f"Sending to {contact.name}: {whatsapp_to}")
+
                 message = twilio_client.messages.create(
                     body=message_body,
                     from_=f'whatsapp:{os.getenv("TWILIO_PHONE_NUMBER")}',
                     to=whatsapp_to
                 )
-                
-                print(f"✅ Message sent: {message.sid}")
+
+                print(f"Message sent: {message.sid}")
                 sent_messages.append({
-                    'name': contact.name, 
+                    'name': contact.name,
                     'phone': contact.phone,
                     'message_id': message.sid
                 })
-                
+
                 time.sleep(1)
-                
+
             except Exception as e:
                 error_msg = str(e)
-                print(f"❌ Failed for {contact.name}: {error_msg}")
+                print(f"Failed for {contact.name}: {error_msg}")
                 failed_messages.append({
                     'name': contact.name,
                     'phone': contact.phone,
                     'error': error_msg
                 })
-        
+
         return {
             'status': 'success' if sent_messages else 'error',
             'sent_count': len(sent_messages),
             'failed_count': len(failed_messages),
             'sent_messages': sent_messages,
-            'failed_messages': failed_messages
+            'failed_messages': failed_messages,
+            'location_available': bool(maps_link)
         }
-        
+
     except Exception as e:
         error_msg = f"WhatsApp failed: {str(e)}"
-        print(f"❌ {error_msg}")
+        print(error_msg)
         return {
             'status': 'error',
-            'message': error_msg
+            'message': error_msg,
+            'location_available': False
         }
 
 def create_app():
@@ -864,7 +866,7 @@ Please click the link above and confirm it opens at Chennai coordinates."""
     @login_required
     def trigger_sos():
         try:
-            data = request.get_json()
+            data = request.get_json() or {}
             current_user.sos_count += 1
             
             contacts = EmergencyContact.query.filter_by(user_id=current_user.id).all()
@@ -885,7 +887,7 @@ Please click the link above and confirm it opens at Chennai coordinates."""
             
             return jsonify({
                 'status': 'success', 
-                'message': 'Emergency alerts sent with accurate location!',
+                'message': 'Emergency alerts sent with live location.' if result.get('location_available') else 'Emergency alerts sent, but live location was unavailable.',
                 'location': location_data,
                 'result': result
             })
@@ -1709,3 +1711,4 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+

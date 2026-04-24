@@ -1067,9 +1067,21 @@
                     body: JSON.stringify(payload)
                 })
                     .then(response => response.json())
-                    .then(() => refreshProfileStats())
+                    .then((data) => {
+                        refreshProfileStats();
+                        if (data.status !== 'success') {
+                            throw new Error(data.message || 'Failed to send emergency alert.');
+                        }
+
+                        const alertMessage = data.result && data.result.location_available
+                            ? 'EMERGENCY ALERT SENT!\n\nHelp is on the way.\nYour live location has been shared with all emergency contacts.'
+                            : 'EMERGENCY ALERT SENT!\n\nHelp is on the way.\nLive location was unavailable, so the alert was sent without GPS coordinates.';
+                        alert(alertMessage);
+                    })
+                    .catch((error) => {
+                        alert(`Emergency alert failed.\n\n${error.message}`);
+                    })
                     .finally(() => {
-                        alert('EMERGENCY ALERT SENT!\n\nHelp is on the way.\nYour location has been shared with all emergency contacts.');
                         playAlarm();
                     });
             };
