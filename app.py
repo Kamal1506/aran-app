@@ -186,6 +186,136 @@ def build_safety_heatmap_data(origin, destination=None):
         'hotspots': hotspots
     }
 
+
+def fetch_json(url):
+    request_obj = urllib.request.Request(
+        url,
+        headers={'User-Agent': 'ARAN Safe Route Planner/1.0'}
+    )
+    with urllib.request.urlopen(request_obj, timeout=15) as response:
+        return json.loads(response.read().decode())
+
+
+def format_distance_meters(distance_meters):
+    distance_meters = float(distance_meters or 0)
+    if distance_meters >= 1000:
+        return f"{distance_meters / 1000:.1f} km"
+    return f"{int(round(distance_meters))} m"
+
+
+def format_duration_seconds(duration_seconds):
+    total_minutes = max(1, int(round(float(duration_seconds or 0) / 60)))
+    hours, minutes = divmod(total_minutes, 60)
+    if hours and minutes:
+        return f"{hours} hr {minutes} mins"
+    if hours:
+        return f"{hours} hr"
+    return f"{minutes} mins"
+
+
+def build_osrm_instruction(step):
+    maneuver = step.get('maneuver', {})
+    maneuver_type = maneuver.get('type', 'continue')
+    modifier = (maneuver.get('modifier') or '').replace('_', ' ')
+    road_name = (step.get('name') or '').strip()
+    road_label = road_name if road_name else 'the road'
+
+    if maneuver_type == 'depart':
+        direction = f" {modifier}" if modifier else ''
+        return f"Start and head{direction} on {road_label}"
+    if maneuver_type == 'arrive':
+        return "Arrive at your destination"
+    if maneuver_type == 'turn':
+        direction = modifier or 'ahead'
+        return f"Turn {direction} onto {road_label}"
+    if maneuver_type == 'new name':
+        return f"Continue onto {road_label}"
+    if maneuver_type == 'merge':
+        direction = f" {modifier}" if modifier else ''
+        return f"Merge{direction} onto {road_label}"
+    if maneuver_type == 'fork':
+        direction = modifier or 'ahead'
+        return f"Keep {direction} at the fork to stay on {road_label}"
+    if maneuver_type == 'roundabout':
+        exit_number = maneuver.get('exit')
+        if exit_number:
+            return f"Enter the roundabout and take exit {exit_number} onto {road_label}"
+        return f"Enter the roundabout and continue onto {road_label}"
+    if maneuver_type == 'end of road':
+        direction = modifier or 'left or right'
+        return f"At the end of the road, turn {direction}"
+    if maneuver_type == 'use lane':
+        return f"Use the marked lane to continue on {road_label}"
+    return f"Continue on {road_label}"
+
+
+def build_route_bounds(path_points):
+    if not path_points:
+        return None
+
+    lats = [point['lat'] for point in path_points]
+    lngs = [point['lng'] for point in path_points]
+    return {
+        'northeast': {
+            'lat': max(lats),
+            'lng': max(lngs)
+        },
+        'southwest': {
+            'lat': min(lats),
+            'lng': min(lngs)
+        }
+    }
+
+
+def calculate_open_route_safety(route, leg, route_index):
+    base_score = 62
+
+    distance_km = float(route.get('distance', 0)) / 1000
+    duration_minutes = float(route.get('duration', 0)) / 60
+    step_count = len(leg.get('steps', []))
+
+    if distance_km <= 3:
+        base_score += 15
+    elif distance_km <= 8:
+        base_score += 8
+    elif distance_km > 18:
+        base_score -= 10
+
+    if duration_minutes <= 15:
+        base_score += 10
+    elif duration_minutes > 45:
+        base_score -= 6
+
+    if step_count <= 8:
+        base_score += 7
+    elif step_count >= 18:
+        base_score -= 6
+
+    current_hour = get_local_now().hour
+    if 6 <= current_hour <= 20:
+        base_score += 8
+    else:
+        base_score -= 7
+
+    if route_index == 0:
+        base_score += 4
+
+    return max(0, min(100, int(round(base_score))))
+
+
+def build_route_summary(steps, route_index):
+    road_names = []
+    for step in steps:
+        road_name = (step.get('name') or '').strip()
+        if road_name and road_name not in road_names:
+            road_names.append(road_name)
+        if len(road_names) == 2:
+            break
+
+    if road_names:
+        return f"Via {' and '.join(road_names)}"
+    return f"Route {route_index + 1}"
+
 def ensure_runtime_columns(app):
     """Keep local databases compatible without a formal migration step."""
     required_columns = {
@@ -1321,6 +1451,119 @@ Please click the link above and confirm it opens at Chennai coordinates."""
                 'travel_mode': travel_mode
             })
 
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e)})
+
+    @app.route('/api/search_destination')
+    @login_required
+    def search_destination():
+        try:
+            query = (request.args.get('q') or '').strip()
+            if len(query) < 2:
+                return jsonify({'status': 'success', 'results': []})
+
+            params = urllib.parse.urlencode({
+                'q': query,
+                'format': 'jsonv2',
+                'limit': 5,
+                'countrycodes': 'in',
+                'addressdetails': 1
+            })
+            url = f"https://nominatim.openstreetmap.org/search?{params}"
+            search_results = fetch_json(url)
+
+            processed_results = [{
+                'name': item.get('display_name', '').split(',')[0],
+                'formatted_address': item.get('display_name'),
+                'place_id': item.get('place_id'),
+                'location': {
+                    'lat': float(item['lat']),
+                    'lng': float(item['lon'])
+                }
+            } for item in search_results]
+
+            return jsonify({'status': 'success', 'results': processed_results})
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e), 'results': []})
+
+    @app.route('/api/get_open_route', methods=['POST'])
+    @login_required
+    def get_open_route():
+        try:
+            data = request.get_json() or {}
+            user_location = data.get('userLocation') or {}
+            destination_location = data.get('destinationLocation') or {}
+
+            origin_lat = user_location.get('lat')
+            origin_lng = user_location.get('lng')
+            destination_lat = destination_location.get('lat')
+            destination_lng = destination_location.get('lng')
+            destination_label = (data.get('destination') or 'Destination').strip()
+
+            if None in (origin_lat, origin_lng, destination_lat, destination_lng):
+                return jsonify({'status': 'error', 'message': 'Origin and destination coordinates are required'})
+
+            osrm_url = (
+                "https://router.project-osrm.org/route/v1/driving/"
+                f"{float(origin_lng)},{float(origin_lat)};{float(destination_lng)},{float(destination_lat)}"
+            )
+            params = urllib.parse.urlencode({
+                'overview': 'full',
+                'geometries': 'geojson',
+                'steps': 'true',
+                'alternatives': 'true'
+            })
+            osrm_data = fetch_json(f"{osrm_url}?{params}")
+
+            if osrm_data.get('code') != 'Ok' or not osrm_data.get('routes'):
+                return jsonify({'status': 'error', 'message': 'No route found for this destination'})
+
+            processed_routes = []
+            for route_index, route in enumerate(osrm_data['routes']):
+                leg = route['legs'][0] if route.get('legs') else {}
+                step_items = leg.get('steps', [])
+                steps = [{
+                    'instruction': build_osrm_instruction(step),
+                    'distance': format_distance_meters(step.get('distance', 0)),
+                    'duration': format_duration_seconds(step.get('duration', 0))
+                } for step in step_items]
+
+                path_points = [{
+                    'lat': coordinate[1],
+                    'lng': coordinate[0]
+                } for coordinate in route.get('geometry', {}).get('coordinates', [])]
+
+                processed_routes.append({
+                    'summary': build_route_summary(step_items, route_index),
+                    'distance': {
+                        'text': format_distance_meters(route.get('distance', 0)),
+                        'value': route.get('distance', 0)
+                    },
+                    'duration': {
+                        'text': format_duration_seconds(route.get('duration', 0)),
+                        'value': route.get('duration', 0)
+                    },
+                    'safety_score': calculate_open_route_safety(route, leg, route_index),
+                    'start_address': 'Current Location',
+                    'end_address': destination_label,
+                    'start_location': {
+                        'lat': float(origin_lat),
+                        'lng': float(origin_lng)
+                    },
+                    'end_location': {
+                        'lat': float(destination_lat),
+                        'lng': float(destination_lng)
+                    },
+                    'steps': steps,
+                    'path': path_points,
+                    'bounds': build_route_bounds(path_points)
+                })
+
+            return jsonify({
+                'status': 'success',
+                'routes': processed_routes,
+                'travel_mode': 'driving'
+            })
         except Exception as e:
             return jsonify({'status': 'error', 'message': str(e)})
 
